@@ -1,0 +1,22 @@
+# Define the properties of the sensitive data under protection.
+[data]
+data_table_name_prefix = "wedpr-demo-table"
+
+    # Control how the sensitive data will be stored.
+    [data.storage]
+    adapter_type = "blockchain.fisco-bcos"
+    storage_controller_type = "smart-contract.solidity"
+
+[resource-generation]
+    # offline_resource_path = "./resource"
+    # Control which langauge will be used in the generated code templates.
+    [resource-generation.output]
+    output_language = "java"
+    app_output_path = "./WeDPR-Demo"
+
+    [resource-generation.workflow.anonymous_voting]
+    enabled = true
+
+    [resource-generation.workflow.hidden_asset]
+    enabled = true
+    
