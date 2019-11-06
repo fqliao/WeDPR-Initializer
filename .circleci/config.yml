@@ -30,6 +30,7 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt install -y openssl curl
+            sudo apt install python3-pip
             pip3 install -r requirements.txt
       - run:
           name: run wedpr_initializer.py
@@ -40,7 +41,7 @@ jobs:
           name: test
           command: |
             cd ./WeDPR-Demo
-            bash ./WeDPR-Demo/nodes/127.0.0.1/start_all.sh
+            bash ./nodes/127.0.0.1/start_all.sh
             cd ./WeDPR-Client
             bash gradlew build --info
             bash gradlew test --info

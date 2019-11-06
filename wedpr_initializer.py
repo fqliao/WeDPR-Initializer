@@ -193,14 +193,14 @@ def check_state(cfg):
     if storage_type != "blockchain.fisco-bcos":
         print("Now storage only support fisco-bcos!")
         sys.exit(1)
-    if storage_type != "smart-contract.solidity":
+    if contract_type != "smart-contract.solidity":
         print("Now smart-contract only support solidity!")
         sys.exit(1)
     output_language = cfg['resource-generation']['output']['output_language']
     if output_language != "java":
         print("Now output_language only support java!")
         sys.exit(1)
-    file_must_exists("./tools/build_chain.sh")
+    file_must_exists("./scripts/build_chain.sh")
 
 if __name__ == "__main__":
     print("wedpr starter init...")
@@ -216,7 +216,7 @@ if __name__ == "__main__":
     app_output_path = cfg['resource-generation']['output']['app_output_path']
     dir_must_not_exists(app_output_path)
     os.mkdir(app_output_path)
-    shutil.copytree("./template".format(offline_resource_path),
+    shutil.copytree("./template",
                     "{}/WeDPR-Client".format(app_output_path))
     if 'offline_resource_path' in cfg['resource-generation']['output']:
         offline_resource_path = cfg['resource-generation']['output']['offline_resource_path']
@@ -230,7 +230,6 @@ if __name__ == "__main__":
         shutil.copyfile("{}/WeDPR-Java-SDK.jar".format(offline_resource_path),
                         "{}/WeDPR-Client/lib/WeDPR-Java-SDK.jar".format(app_output_path))
     else:
-        os.mkdir(app_output_path)
         wedpr_jar_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK.jar'
         node_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/mini-wedpr-fisco-bcos.tar.gz'
         node_name = "mini-wedpr-fisco-bcos.tar.gz"
@@ -274,10 +273,10 @@ if __name__ == "__main__":
                 'hidden_asset_example_{}'.format(table_name))
 
     (status, result)\
-        = getstatusoutput('bash ./tools/build_chain.sh -l "127.0.0.1:4" -p 30300,20200,8545 -e ./fisco-bcos -o {}/nodes'.format(app_output_path))
+        = getstatusoutput('bash ./scripts/build_chain.sh -l "127.0.0.1:4" -p 30300,20200,8545 -e {}/fisco-bcos -o {}/nodes'.format(app_output_path, app_output_path))
     print(result)
 
-    dir_must_exists("./nodes")
+    dir_must_exists("{}/nodes".format(app_output_path))
     shutil.copy("{}/nodes/127.0.0.1/sdk/ca.crt".format(app_output_path),
                 '{}/src/main/resources/ca.crt'.format(client_path))
     shutil.copy("{}/nodes/127.0.0.1/sdk/sdk.crt".format(app_output_path),

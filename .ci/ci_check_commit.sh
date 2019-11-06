@@ -3,7 +3,7 @@
 set -e
 
 scan_code_script="python ~/cobra/cobra.py -t "
-ignore_files=(.ci test example resources)
+ignore_files=(.ci test example resources build_chain)
 
 LOG_ERROR() {
     content=${1}
