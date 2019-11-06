@@ -1,0 +1,54 @@
+# Created by .ignore support plugin (hsz.mobi)
+### Java template
+*.class
+
+
+# Package Files #
+*.war
+*.ear
+*.bin
+*.abi
+
+### Gradle template
+.gradle
+/build
+gradle.properties
+
+
+# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
+!gradle-wrapper.jar
+
+# Cache of project
+.gradletasknamecache
+
+# Work around https://youtrack.jetbrains.com/issue/IDEA-116898
+# gradle/wrapper/gradle-wrapper.properties
+
+.idea
+*.iml
+
+# OS X
+.DS_Store
+
+/bin
+/target
+/out
+/log
+/dist
+template/src/test/resources/ca.crt
+template/src/test/resources/node.crt
+template/src/test/resources/node.key
+build.gradle.bak
+.project
+.settings/**
+.classpath
+
+template/lib/WeDPR-Java-SDK.jar
+template/src/main/resources/ca.crt
+template/src/main/resources/sdk.*
+template/src/main/resources/node.*
+template/src/main/resources/*ffi*
+template/src/main/resources/applicationContext.xml
+template/src/main/resources/WeDPR_dynamic_lib/*
+
+
