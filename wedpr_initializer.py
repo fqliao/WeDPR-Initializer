@@ -185,10 +185,7 @@ def replace(filepath, old, new):
         return False
     return True
 
-
-if __name__ == "__main__":
-    print("wedpr starter init...")
-    cfg = init()
+def check_state(cfg):
     storage_type = cfg['data']['storage']['adapter_type']
     contract_type = cfg['data']['storage']['storage_controller_type']
     print("storage_type = ", storage_type)
@@ -199,12 +196,18 @@ if __name__ == "__main__":
     if storage_type != "smart-contract.solidity":
         print("Now smart-contract only support solidity!")
         sys.exit(1)
-    table_name = cfg['data']['data_table_name_prefix']
-
     output_language = cfg['resource-generation']['output']['output_language']
     if output_language != "java":
         print("Now output_language only support java!")
         sys.exit(1)
+    file_must_exists("./tools/build_chain.sh")
+
+if __name__ == "__main__":
+    print("wedpr starter init...")
+    cfg = init()
+    check_state(cfg)
+    table_name = cfg['data']['data_table_name_prefix']
+
     anonymous_voting = cfg['resource-generation']['workflow']['anonymous_voting']['enabled']
     hidden_asset = cfg['resource-generation']['workflow']['hidden_asset']['enabled']
     print("anonymous_voting_enable = {}".format(anonymous_voting))
@@ -228,7 +231,7 @@ if __name__ == "__main__":
                         "{}/WeDPR-Client/lib/WeDPR-Java-SDK.jar".format(app_output_path))
     else:
         os.mkdir(app_output_path)
-        wedpr_jar_download_link = 'https://github.com/HaoXuan40404/WeDPR-Java-SDK.git'
+        wedpr_jar_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK.jar'
         node_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/mini-wedpr-fisco-bcos.tar.gz'
         node_name = "mini-wedpr-fisco-bcos.tar.gz"
         download_bin(wedpr_jar_download_link, "WeDPR-Java-SDK.jar")
@@ -250,7 +253,7 @@ if __name__ == "__main__":
         shutil.rmtree(
             '{}/src/test/java/com/webank/wedpr/anonymousvoting'.format(client_path))
     else:
-        vote_table_file = '{}/src/test/java/com/webank/wedpr/anonymousvoting/DemoMain.java'.format(
+        vote_table_file = '{}/src/main/java/com/webank/wedpr/example/anonymousvoting/DemoMain.java'.format(
             client_path)
         file_must_exists(vote_table_file)
         replace(vote_table_file, 'voter_example_',
@@ -264,14 +267,14 @@ if __name__ == "__main__":
         shutil.rmtree(
             '{}/src/test/java/com/webank/wedpr/assethiding'.format(client_path))
     else:
-        asset_table_file = '{}/src/test/java/com/webank/wedpr/assethiding/DemoMain.java'.format(
+        asset_table_file = '{}/src/main/java/com/webank/wedpr/example/assethiding/DemoMain.java'.format(
             client_path)
         file_must_exists(asset_table_file)
         replace(asset_table_file, 'hidden_asset_example',
                 'hidden_asset_example_{}'.format(table_name))
 
     (status, result)\
-        = getstatusoutput('bash build_chain.sh -l "127.0.0.1:4" -p 30300,20200,8545 -e ./fisco-bcos -o {}/nodes'.format(app_output_path))
+        = getstatusoutput('bash ./tools/build_chain.sh -l "127.0.0.1:4" -p 30300,20200,8545 -e ./fisco-bcos -o {}/nodes'.format(app_output_path))
     print(result)
 
     dir_must_exists("./nodes")
