@@ -1,0 +1,106 @@
+plugins {
+  id 'com.github.sherter.google-java-format' version '0.8'
+}
+
+apply plugin: 'maven'
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'jacoco'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+[compileJava, compileTestJava, javadoc]*.options*.encoding = 'UTF-8'
+
+repositories {
+    maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
+    maven { url "https://dl.bintray.com/ethereum/maven/" }
+    mavenCentral()
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        html.enabled true
+    }
+    afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            fileTree(dir: it,
+                    exclude: ['**/test/**','**/proto/**', '**/example/**'])
+        })
+    }
+}
+
+dependencies {
+
+    compile files('lib/pkey-gen.jar')
+    compile files('lib/WeDPR-Java-SDK.jar')
+    compile 'org.fisco-bcos:web3sdk:2.1.0'
+    compile 'org.slf4j:slf4j-log4j12:1.7.25'
+    compile 'com.google.protobuf:protobuf-java:3.9.1'
+    compile 'com.madgag.spongycastle:core:1.58.0.0'
+    compile 'org.web3j:core:3.4.0'
+    compile 'com.lambdaworks:scrypt:1.4.0'
+    compile 'commons-codec:commons-codec:1.9'
+    compile 'org.projectlombok:lombok:1.18.2'
+    compile 'org.jline:jline:3.12.0'
+    annotationProcessor 'org.projectlombok:lombok:1.18.2'
+    testCompile 'junit:junit:4.12'
+    
+}
+
+googleJavaFormat {
+  options style: 'AOSP'
+}
+
+check.dependsOn.remove(test)
+check.dependsOn.remove(verifyGoogleJavaFormat)
+
+sourceSets {
+	main {
+		java {
+			srcDir 'src/main/java'
+			srcDir 'src/test/java'
+		}
+		resources  {
+			srcDir 'src/main/resources'
+		}
+	}
+}
+
+jar {
+	destinationDir file('dist/apps')
+	archiveName project.name + '.jar'
+	
+    exclude '**/*.xml'
+    exclude '**/*.properties'
+    exclude '**/*.crt'
+    exclude '**/*.key'
+    exclude '**/*.secret'
+
+    doLast {
+		copy {
+			from configurations.runtime
+			into 'dist/lib'
+		}
+		copy {
+			from file('src/main/resources/')
+			into 'dist/conf'
+		}
+		copy {
+			from file('tools/')
+			into 'dist/tools/'
+		}
+	}
+}
+
+task downloadWeDPRLib(type: Exec) {
+    workingDir "$projectDir/tools"
+    if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+        commandLine 'cmd', '/c', 'download_dynamic_lib.bat'
+    } else {
+        commandLine 'bash', 'download_dynamic_lib.sh'
+    }
+}
+
+build.dependsOn downloadWeDPRLib
