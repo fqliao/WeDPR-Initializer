@@ -2,9 +2,6 @@
 
 set -e
 
-dirpath="$(cd "$(dirname "$0")" && pwd)"
-cd $dirpath
-
 LANG=zh_CN.UTF-8
 
 function help(){
@@ -49,11 +46,19 @@ make_dir() {
     fi
 }
 
+abspath() {                                               
+    echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")";
+}
+
 # default value 
 input_dir= 
 output_dir= 
 
 function run(){
+  input_dir=$(abspath ${input_dir})
+  output_dir=$(abspath ${output_dir})
+  dirpath="$(cd "$(dirname "$0")" && pwd)"
+  cd $dirpath
 	java -cp "../apps/*:../conf/:../lib/*" com.webank.wedpr.tool.KeyManager ${input_dir} ${output_dir} "recover_secret"
 }
 
