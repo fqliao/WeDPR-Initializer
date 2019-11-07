@@ -8,7 +8,6 @@ import com.webank.wedpr.common.EncodedKeyPair;
 import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.common.WedprException;
 import com.webank.wedpr.example.assethiding.DemoMain.TransferType;
-import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 
 public class FulfillCreditExampleProtocol {
 
@@ -17,7 +16,7 @@ public class FulfillCreditExampleProtocol {
             RedeemerClient redeemerClient,
             EncodedKeyPair redeemerKeyPair,
             CreditCredential creditCredential,
-            StorageExampleClient storageClientExample)
+            StorageExampleClient storageClient)
             throws Exception {
         RedeemerResult redeemerFulfillResult = null;
         if (transferType == TransferType.Numberic) {
@@ -32,11 +31,8 @@ public class FulfillCreditExampleProtocol {
         if (Utils.hasWedprError(redeemerFulfillResult)) {
             throw new WedprException(redeemerFulfillResult.wedprErrorMessage);
         }
-        TransactionReceipt fulfillCreditReceipt =
-                storageClientExample.fulfillCredit(redeemerFulfillResult.fulfillArgument);
-        if (!Utils.isTransactionSucceeded(fulfillCreditReceipt)) {
-            throw new WedprException("Blockchain verify fulfill credit failed!");
-        }
+
+        storageClient.fulfillCredit(redeemerFulfillResult.fulfillArgument);
         System.out.println("Blockchain verify fulfill credit successful!");
 
         CreditValue creditValue = creditCredential.getCreditSecret().getCreditValue();

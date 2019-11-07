@@ -10,10 +10,10 @@ import com.webank.wedpr.assethiding.proto.IssueArgument;
 import com.webank.wedpr.assethiding.proto.RegulationInfo;
 import com.webank.wedpr.common.EncodedKeyPair;
 import com.webank.wedpr.common.PublicKeyCrypto;
+import com.webank.wedpr.common.PublicKeyCryptoExample;
 import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.common.WedprException;
 import com.webank.wedpr.example.assethiding.DemoMain.TransferType;
-import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 
 public class IssueCreditExampleProtocol {
 
@@ -22,7 +22,7 @@ public class IssueCreditExampleProtocol {
             RedeemerClient redeemerClient,
             EncodedKeyPair redeemerKeyPair,
             CreditValue creditValue,
-            StorageExampleClient storageExampleClient,
+            StorageExampleClient storageClient,
             OwnerClient ownerClient,
             byte[] masterSecret,
             byte[] regulatorPublicKey)
@@ -55,18 +55,10 @@ public class IssueCreditExampleProtocol {
 
         // 1.3 blockchain: verfiy issue credit
         // Create table `hidden_asset_example` and `hidden_asset_regulation_info`.
-        storageExampleClient.init();
+        storageClient.init();
 
         // verify issueCredit and save credit on blockchain
-        // notice: contract function use byte[] parameter <= base64 String to byte[] by
-        // String.getBytes(),
-        // while pb parse use byte[] <= base64 String to byte[] by Utils.stringToBytes(String param)
-
-        TransactionReceipt issueCreditReceipt =
-                storageExampleClient.issueCredit(redeemerResult.issueArgument);
-        if (!Utils.isTransactionSucceeded(issueCreditReceipt)) {
-            throw new WedprException("Blockchain verify issue credit failed!");
-        }
+        storageClient.issueCredit(redeemerResult.issueArgument);
         System.out.println("\nBlockchain verify issue credit successful!");
 
         // Owner assemble the issued CreditCredential
@@ -92,12 +84,8 @@ public class IssueCreditExampleProtocol {
         PublicKeyCrypto publicKeyCrypto = new PublicKeyCryptoExample();
         String encryptedregulationInfo =
                 Utils.bytesToString(publicKeyCrypto.encrypt(regulatorPublicKey, regulationInfo));
-        TransactionReceipt insertregulationInfoReceipt =
-                storageExampleClient.insertRegulationInfo(
-                        regulationCurrentCredit, regulationSpentCredit, encryptedregulationInfo);
-        if (!Utils.isTransactionSucceeded(insertregulationInfoReceipt)) {
-            throw new WedprException("Inserts regulation information about issuing credit failed.");
-        }
+        storageClient.insertRegulationInfo(
+                regulationCurrentCredit, regulationSpentCredit, encryptedregulationInfo);
 
         return creditCredential;
     }

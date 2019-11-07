@@ -8,10 +8,10 @@ import com.webank.wedpr.assethiding.proto.RegulationInfo;
 import com.webank.wedpr.assethiding.proto.TransactionInfo;
 import com.webank.wedpr.assethiding.proto.TransferArgument;
 import com.webank.wedpr.common.PublicKeyCrypto;
+import com.webank.wedpr.common.PublicKeyCryptoExample;
 import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.common.WedprException;
 import com.webank.wedpr.example.assethiding.DemoMain.TransferType;
-import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 
 public class TransferCreditExampleProtocol {
 
@@ -21,7 +21,7 @@ public class TransferCreditExampleProtocol {
             OwnerState senderOwnerState,
             OwnerState receiverOwnerState,
             TransactionInfo transactionInfo,
-            StorageExampleClient storageExampleClient,
+            StorageExampleClient storageClient,
             byte[] regulatorPublicKey)
             throws Exception {
         // 1 receiver transfer step1
@@ -61,11 +61,8 @@ public class TransferCreditExampleProtocol {
             throw new WedprException(transferResult.wedprErrorMessage);
         }
         // 3 verify transfer credit and remove old credit and save new credit on blockchain
-        TransactionReceipt transferCreditReceipt =
-                storageExampleClient.transferCredit(transferResult.transferRequest);
-        if (!Utils.isTransactionSucceeded(transferCreditReceipt)) {
-            throw new WedprException("Blockchain verify transfer credit failed!");
-        }
+        storageClient.transferCredit(transferResult.transferRequest);
+
         System.out.println("Blockchain verify transfer credit successful!");
 
         // 4 receiver transfer step final
@@ -103,12 +100,8 @@ public class TransferCreditExampleProtocol {
         PublicKeyCrypto publicKeyCrypto = new PublicKeyCryptoExample();
         String encryptedregulationInfo =
                 Utils.bytesToString(publicKeyCrypto.encrypt(regulatorPublicKey, regulationInfo));
-        TransactionReceipt insertregulationInfoReceipt =
-                storageExampleClient.insertRegulationInfo(
-                        regulationCurrentCredit, regulationSpentCredit, encryptedregulationInfo);
-        if (!Utils.isTransactionSucceeded(insertregulationInfoReceipt)) {
-            throw new WedprException("Inserts regulation information about transferring failed.");
-        }
+        storageClient.insertRegulationInfo(
+                regulationCurrentCredit, regulationSpentCredit, encryptedregulationInfo);
 
         return creditCredentialForRecevier;
     }

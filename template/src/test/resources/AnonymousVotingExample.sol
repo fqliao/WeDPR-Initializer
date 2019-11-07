@@ -6,6 +6,32 @@ import "./WedprPrecompiled.sol";
 // Example application contract implementing anonymous voting suite.
 // Please feel free to modify it according to your business demands.
 contract AnonymousVotingExample {
+    address constant private TABLE_FACTORY_PRECOMPILED_ADDRESS = 0x1001;
+    address constant private WEDPR_PRECOMPILED_ADDRESS = 0x5018;
+    uint constant private MIN_COUNTER_NUMBER = 2;
+
+    // voter table fields
+    string constant private VOTER_INDEX_FIELD = "blankBallot";
+    string constant private VOTER_DATA_FIELD = "voteStorage";
+
+    // counter table fields
+    string constant private COUNTER_INDEX_FIELD = "counterId";
+    string constant private COUNTER_DATA1_FIELD = "hPointShare";
+    string constant private COUNTER_DATA2_FIELD = "decryptedResultPartStorage";
+    string constant private COUNTER_DATA_FIELD = "hPointShare, decryptedResultPartStorage";
+
+    // regulation table fields
+    string constant private REGULATOR_DATA_FIELD = "regulationInfo";
+
+    string constant private ERROR_VOTER_REVOTE = "Voter is already voted.";
+    string constant private ERROR_VOTER_REQUEST = "Verifies vote request failed.";
+    string constant private ERROR_COUNTER_EXIST = "Counters is already exist.";
+    string constant private ERROR_COUNTER_REQUEST = "Verifies count request failed.";
+    string constant private ERROR_VERIFY_VOTE_RESULT = "Verifies vote result failed.";
+    string constant private ERROR_REGULATOR_DATA_EXIST = "the regulation info already exists";
+    string constant private ERROR_OTHER = "No permission or other errors.";
+    int constant private TABLE_EXSIST = -50001;
+
     WedprPrecompiled wedpr;
     SystemParameters systemParametersStruct;
     ContractState public contractState;
@@ -32,25 +58,6 @@ contract AnonymousVotingExample {
       End
     }
 
-    address constant private TABLE_FACTORY_PRECOMPILED_ADDRESS = 0x1001;
-    address constant private WEDPR_PRECOMPILED_ADDRESS = 0x5018;
-
-    string constant private VOTER_INDEX_FIELD = "blankBallot";
-    string constant private VOTER_DATA_FIELD = "voteStorage";
-
-    string constant private COUNTER_INDEX_FIELD = "counterId";
-    string constant private COUNTER_DATA1_FIELD = "hPointShare";
-    string constant private COUNTER_DATA2_FIELD = "decryptedResultPartStorage";
-    string constant private COUNTER_DATA_FIELD = "hPointShare, decryptedResultPartStorage";
-
-    string constant private ERROR_VOTER_REVOTE = "Voter is already voted.";
-    string constant private ERROR_VOTER_REQUEST = "Verifies vote request failed.";
-    string constant private ERROR_COUNTER_EXIST = "Counters is already exist.";
-    string constant private ERROR_COUNTER_REQUEST = "Verifies count request failed.";
-    string constant private ERROR_VERIFY_VOTE_RESULT = "Verifies vote result failed.";
-    string constant private ERROR_OTHER = "No permission or other errors.";
-    uint constant private MIN_COUNTER_NUMBER = 2;
-
     // Constructor.
     constructor() public {
         owner = msg.sender;
@@ -73,13 +80,15 @@ contract AnonymousVotingExample {
     }
 
     // Initializes the data tables.
-    function init(string voterTableName, string counterTableName) public returns(int, int) {
+    function init(string voterTableName, string counterTableName, string regulationInfoTableName) public {
         require(contractState == ContractState.Initializing, "Voting has started.");
         TableFactory tf = TableFactory(TABLE_FACTORY_PRECOMPILED_ADDRESS);
-        int voterTableResult = tf.createTable(voterTableName, VOTER_INDEX_FIELD, VOTER_DATA_FIELD);
-        int counterTableNameResult = tf.createTable(counterTableName, COUNTER_INDEX_FIELD, COUNTER_DATA_FIELD);
-
-        return (voterTableResult, counterTableNameResult);
+        int result1 = tf.createTable(voterTableName, VOTER_INDEX_FIELD, VOTER_DATA_FIELD);
+        int result2 = tf.createTable(counterTableName, COUNTER_INDEX_FIELD, COUNTER_DATA_FIELD);
+        int result3 = tf.createTable(regulationInfoTableName, VOTER_INDEX_FIELD, REGULATOR_DATA_FIELD);
+        require(result1 == 0 || result1 == TABLE_EXSIST, ERROR_OTHER);
+        require(result2 == 0 || result2 == TABLE_EXSIST, ERROR_OTHER);
+        require(result3 == 0 || result3 == TABLE_EXSIST, ERROR_OTHER);
     }
 
     // Sets candidates list.
@@ -230,6 +239,34 @@ contract AnonymousVotingExample {
     function getVoteResultStorage() public view returns(string) {
         require(contractState == ContractState.End, "Counting has not yet finished.");
         return voteResultStorage;
+    }
+
+    // Inserts regulation information.
+    function insertRegulationInfo(string regulationInfoTableName, string blankBallot, string regulationInfoPb) public {
+        Table table = openTable(regulationInfoTableName);
+        string[] memory regulationInfos;
+        regulationInfos = queryRegulationInfo(regulationInfoTableName, blankBallot);
+        require(regulationInfos.length == 0, ERROR_REGULATOR_DATA_EXIST);
+
+        Entry entry = table.newEntry();
+        entry.set(REGULATOR_DATA_FIELD, regulationInfoPb);
+        int result = table.insert(blankBallot, entry);
+        require(result == 1, ERROR_OTHER);
+    }
+
+    // Queries regulation information.
+    function queryRegulationInfo(string regulationInfoTableName, string blankBallot) public view returns(string[]){
+        Table table = openTable(regulationInfoTableName);
+        Condition condition = table.newCondition();
+        Entries entries = table.select(blankBallot, condition);
+
+        string[] memory regulationInfos = new string[](uint256(entries.size()));
+        for(int i = 0; i < entries.size(); ++i) {
+            Entry entry = entries.get(i);
+            regulationInfos[uint256(i)] = entry.getString(REGULATOR_DATA_FIELD);
+        }
+
+        return regulationInfos;
     }
 
     // Utility function section.

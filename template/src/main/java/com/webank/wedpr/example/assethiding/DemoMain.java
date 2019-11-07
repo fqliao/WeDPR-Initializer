@@ -10,6 +10,7 @@ import com.webank.wedpr.assethiding.proto.RegulationInfo;
 import com.webank.wedpr.assethiding.proto.TransactionInfo;
 import com.webank.wedpr.common.EncodedKeyPair;
 import com.webank.wedpr.common.PublicKeyCrypto;
+import com.webank.wedpr.common.PublicKeyCryptoExample;
 import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.common.WedprException;
 import java.nio.file.Files;
@@ -21,8 +22,8 @@ import org.fisco.bcos.web3j.tuples.generated.Tuple3;
 
 public class DemoMain {
 
-    public static String hiddenAssetTable = "hidden_asset_example";
-    public static String regulationInfoTable = "hidden_asset_regulation_info";
+    public static String hiddenAssetTableName = "hidden_asset_example";
+    public static String regulationInfoTableName = "hidden_asset_regulation_info";
     public static final String SECRET_PATH = "2019_1024_06_17_26.secret";
 
     // NOTICE:The regulator secret key should be saved by regulator.
@@ -100,8 +101,9 @@ public class DemoMain {
         hiddenAssetExample =
                 AssethidingUtils.loadContract(
                         hiddenAssetExample.getContractAddress(), ecKeyPair, groupID);
-        StorageExampleClient storageExampleClient =
-                new StorageExampleClient(hiddenAssetExample, hiddenAssetTable, regulationInfoTable);
+        StorageExampleClient storageClient =
+                new StorageExampleClient(
+                        hiddenAssetExample, hiddenAssetTableName, regulationInfoTableName);
 
         // Get CreditCredential by running issueCredit example program.
         OwnerClient ownerClient = new OwnerClient();
@@ -111,7 +113,7 @@ public class DemoMain {
                         redeemerClient,
                         redeemerKeyPair,
                         creditValue,
-                        storageExampleClient,
+                        storageClient,
                         ownerClient,
                         masterSecret,
                         regulatorPublicKey);
@@ -124,7 +126,7 @@ public class DemoMain {
 
         // (Optional) Queries regulation information for example.
         Tuple3<List<String>, List<String>, List<String>> RegulationInfos =
-                storageExampleClient.queryRegulationInfo(encodedCurrentCredit);
+                storageClient.queryRegulationInfo(encodedCurrentCredit);
         if (RegulationInfos.getValue3().isEmpty()) {
             throw new WedprException(
                     "Queries regulation information by currentCredit: "
@@ -165,7 +167,7 @@ public class DemoMain {
                         senderOwnerState,
                         receiverOwnerState,
                         transactionInfo,
-                        storageExampleClient,
+                        storageClient,
                         regulatorPublicKey);
 
         String encodedCurrentCreditForRecevier =
@@ -180,7 +182,7 @@ public class DemoMain {
                         + " to receiver susscessful!");
 
         // (Optional) Queries regulation information for example.
-        RegulationInfos = storageExampleClient.queryRegulationInfo(encodedCurrentCreditForRecevier);
+        RegulationInfos = storageClient.queryRegulationInfo(encodedCurrentCreditForRecevier);
         if (RegulationInfos.getValue3().isEmpty()) {
             throw new WedprException(
                     "Queries regulation information by currentCredit: "
@@ -200,7 +202,7 @@ public class DemoMain {
                 redeemerClient,
                 redeemerKeyPair,
                 creditCredentialForReceiver,
-                storageExampleClient);
+                storageClient);
     }
 
     public static void splitNumbericAsset(byte[] regulatorPublicKey) throws Exception {
@@ -225,8 +227,9 @@ public class DemoMain {
         ECKeyPair ecKeyPair = Utils.getEcKeyPair();
         int groupID = 1;
         HiddenAssetExample hiddenAssetExample = AssethidingUtils.deployContract(ecKeyPair, groupID);
-        StorageExampleClient storageExampleClient =
-                new StorageExampleClient(hiddenAssetExample, hiddenAssetTable, regulationInfoTable);
+        StorageExampleClient storageClient =
+                new StorageExampleClient(
+                        hiddenAssetExample, hiddenAssetTableName, regulationInfoTableName);
 
         // get CreditCredential by running issueCredit example program
         OwnerClient ownerClient = new OwnerClient();
@@ -236,7 +239,7 @@ public class DemoMain {
                         redeemerClient,
                         redeemerKeyPair,
                         creditValue,
-                        storageExampleClient,
+                        storageClient,
                         ownerClient,
                         masterSecret,
                         regulatorPublicKey);
@@ -251,7 +254,7 @@ public class DemoMain {
 
         // (Optional) Queries regulation information for example.
         Tuple3<List<String>, List<String>, List<String>> regulationInfos =
-                storageExampleClient.queryRegulationInfo(encodedCurrentCredit);
+                storageClient.queryRegulationInfo(encodedCurrentCredit);
         if (regulationInfos.getValue3().isEmpty()) {
             throw new WedprException(
                     "Queries regulation information by currentCredit: "
@@ -291,7 +294,7 @@ public class DemoMain {
                         senderOwnerState,
                         receiverOwnerState,
                         transactionInfo,
-                        storageExampleClient,
+                        storageClient,
                         regulatorPublicKey);
 
         CreditCredential creditCredentialSender = creditCredentialResult.get(0);
@@ -318,7 +321,7 @@ public class DemoMain {
                         + " to itself susscessful!");
 
         // (Optional) Queries regulation information for example.
-        regulationInfos = storageExampleClient.queryRegulationInfo(encodedCurrentCreditSender);
+        regulationInfos = storageClient.queryRegulationInfo(encodedCurrentCreditSender);
         if (regulationInfos.getValue3().isEmpty()) {
             throw new WedprException(
                     "Queries regulation information by currentCredit: "
@@ -332,7 +335,7 @@ public class DemoMain {
                 "\nDecrypted the sender regulation information about spliting credit is:\n"
                         + regulationInfo);
 
-        regulationInfos = storageExampleClient.queryRegulationInfo(encodedCurrentCreditReceiver);
+        regulationInfos = storageClient.queryRegulationInfo(encodedCurrentCreditReceiver);
         if (regulationInfos.getValue3().isEmpty()) {
             throw new WedprException(
                     "Queries regulation information by currentCredit: "
@@ -352,12 +355,12 @@ public class DemoMain {
                 redeemerClient,
                 redeemerKeyPair,
                 creditCredentialSender,
-                storageExampleClient);
+                storageClient);
         FulfillCreditExampleProtocol.fulfillCredit(
                 TransferType.Numberic,
                 redeemerClient,
                 redeemerKeyPair,
                 creditCredentialReceiver,
-                storageExampleClient);
+                storageClient);
     }
 }

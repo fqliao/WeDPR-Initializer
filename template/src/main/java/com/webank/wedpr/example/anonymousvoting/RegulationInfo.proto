@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package com.webank.wedpr.anonymous_voting.proto;
+option java_package = "com.webank.wedpr.anonymousvoting.proto";
+option java_multiple_files = true;
+
+// An example structure describing the data used by regulator.
+message RegulationInfo {
+    repeated string candidate = 1;
+    repeated int32 value = 2;
+}

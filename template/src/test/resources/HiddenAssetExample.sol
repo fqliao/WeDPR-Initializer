@@ -7,21 +7,25 @@ import "./WedprPrecompiled.sol";
 // Example application contract implementing hidden asset suite.
 // Please feel free to modify it according to your business demands.
 contract HiddenAssetExample {
-    WedprPrecompiled wedpr;
+    address constant private TABLE_FACTORY_PRECOMPILED_ADDRESS = 0x1001;
+    address constant private WEDPR_PRECOMPILED_ADDRESS = 0x5018;
+
+    // hidden asset table fields
+    string constant private CREDIT_INDEX_FIELD = "currentCredit";
+    string constant private CREDIT_DATA_FIELD = "creditStorage";
+
+    // regulation table fields
+    string constant private REGULATOR_DATA1_FIELD = "spentCredit";
+    string constant private REGULATOR_DATA2_FIELD = "regulationInfo";
+    string constant private REGULATOR_DATA_FIELD = "spentCredit,regulationInfo";
+
     string constant private ERROR_CREDIT_SPENT = "the credit already spent";
     string constant private ERROR_CREDIT_EXIST = "the credit already exists";
     string constant private ERROR_REGULATOR_DATA_EXIST = "the regulation info already exists";
     string constant private ERROR_OTHER = "no permission or other errors";
     int constant private TABLE_EXSIST = -50001;
-
-    string constant private CREDIT_INDEX_FIELD = "currentCredit";
-    string constant private CREDIT_DATA_FIELD = "creditStorage";
-    string constant private REGULATOR_DATA1_FIELD = "spentCredit";
-    string constant private REGULATOR_DATA2_FIELD = "regulationInfo";
-    string constant private REGULATOR_DATA_FIELD = "spentCredit,regulationInfo";
-
-    address constant private TABLE_FACTORY_PRECOMPILED_ADDRESS = 0x1001;
-    address constant private WEDPR_PRECOMPILED_ADDRESS = 0x5018;
+    
+    WedprPrecompiled wedpr;
 
     // Variable struct used by credit transferring action.
     // It is used to overcome solidity's restriction that the number of
@@ -53,18 +57,18 @@ contract HiddenAssetExample {
     }
 
     // Initializes the data tables.
-    function init(string hiddenAssetTable, string regulationInfoTable) public {
+    function init(string hiddenAssetTableName, string regulationInfoTableName) public {
         TableFactory tf = TableFactory(TABLE_FACTORY_PRECOMPILED_ADDRESS);
-        int result1 = tf.createTable(hiddenAssetTable, CREDIT_INDEX_FIELD, CREDIT_DATA_FIELD);
-        int result2 = tf.createTable(regulationInfoTable, CREDIT_INDEX_FIELD, REGULATOR_DATA_FIELD);
+        int result1 = tf.createTable(hiddenAssetTableName, CREDIT_INDEX_FIELD, CREDIT_DATA_FIELD);
+        int result2 = tf.createTable(regulationInfoTableName, CREDIT_INDEX_FIELD, REGULATOR_DATA_FIELD);
         require(result1 == 0 || result1 == TABLE_EXSIST, ERROR_OTHER);
         require(result2 == 0 || result2 == TABLE_EXSIST, ERROR_OTHER);
     }
 
     // Queries whether an unspent credit exists.
-    function queryCredit(string hiddenAssetTable, string currentCreditPb)
+    function queryCredit(string hiddenAssetTableName, string currentCreditPb)
         public view returns(int, string) {
-        Table table = openTable(hiddenAssetTable);
+        Table table = openTable(hiddenAssetTableName);
         Condition condition = table.newCondition();
         condition.EQ(CREDIT_INDEX_FIELD, currentCreditPb);
 
@@ -79,7 +83,7 @@ contract HiddenAssetExample {
 
     // Issues a new credit if the request passed the validation.
     function issueCredit(
-        string hiddenAssetTable, string issueArgumentPb) public {
+        string hiddenAssetTableName, string issueArgumentPb) public {
         // verify the issued credit
         string memory currentCredit = "";
         string memory creditStorage = "";
@@ -89,18 +93,18 @@ contract HiddenAssetExample {
         // query the issued credit
         int errorCode = 0;
         string memory unused = "";
-        (errorCode, unused) = queryCredit(hiddenAssetTable, currentCredit);
+        (errorCode, unused) = queryCredit(hiddenAssetTableName, currentCredit);
         require(errorCode != 0, ERROR_CREDIT_EXIST);
 
         // save the issued credit on the blockchain
-        Table table = openTable(hiddenAssetTable);
+        Table table = openTable(hiddenAssetTableName);
         int records = insertUnspentCredit(table, currentCredit, creditStorage);
         require(records == 1, ERROR_OTHER);
     }
 
     // Fulfills an existing credit if the request passed the validation.
     function fulfillCredit(
-        string hiddenAssetTable, string fulfillArgumentPb) public {
+        string hiddenAssetTableName, string fulfillArgumentPb) public {
         // verify the fulfilled credit
         string memory currentCredit = "";
         string memory creditStorage = "";
@@ -110,18 +114,18 @@ contract HiddenAssetExample {
         // query the fulfilled credit
         int errorCode = 0;
         string memory unused = "";
-        (errorCode, unused) = queryCredit(hiddenAssetTable, currentCredit);
+        (errorCode, unused) = queryCredit(hiddenAssetTableName, currentCredit);
         require(errorCode == 0, ERROR_CREDIT_SPENT);
 
         // remove the fulfilled credit
-        Table table = openTable(hiddenAssetTable);
+        Table table = openTable(hiddenAssetTableName);
         int records = removeUnspentCredit(table, currentCredit);
         require(records == 1, ERROR_OTHER);
     }
 
     // Transfers an existing credit if the request passed the validation.
     function transferredCredit(
-        string hiddenAssetTable, string transferRequestPb) public {
+        string hiddenAssetTableName, string transferRequestPb) public {
         // verify the transfer credit
         TransferVars memory transferVars = TransferVars("", "", "", "", "");
 
@@ -132,16 +136,16 @@ contract HiddenAssetExample {
         // query the spent current credit
         int errorCode = 0;
         (errorCode, transferVars.unused) =
-            queryCredit(hiddenAssetTable, transferVars.spentCurrentCredit);
+            queryCredit(hiddenAssetTableName, transferVars.spentCurrentCredit);
         require(errorCode == 0, ERROR_CREDIT_SPENT);
 
         // query the new current credit
         (errorCode, transferVars.unused) =
-            queryCredit(hiddenAssetTable, transferVars.newCurrentCredit);
+            queryCredit(hiddenAssetTableName, transferVars.newCurrentCredit);
         require(errorCode != 0, ERROR_CREDIT_EXIST);
 
         // update the transfer credit
-        Table table = openTable(hiddenAssetTable);
+        Table table = openTable(hiddenAssetTableName);
         int records = removeUnspentCredit(
             table, transferVars.spentCurrentCredit);
         require(records == 1, ERROR_OTHER);
@@ -153,7 +157,7 @@ contract HiddenAssetExample {
     }
 
     // Splits an existing credit if the request passed the validation.
-    function splitCredit(string hiddenAssetTable, string splitRequestPb) public {
+    function splitCredit(string hiddenAssetTableName, string splitRequestPb) public {
         // verify the split credit
         SplitVars memory splitVars = SplitVars("", "", "", "", "", "", "");
         (splitVars.spentCurrentCredit, splitVars.spentCreditStorage,
@@ -164,21 +168,21 @@ contract HiddenAssetExample {
         // query the spent current credit
         int errorCode = 0;
         (errorCode, splitVars.unused) =
-            queryCredit(hiddenAssetTable, splitVars.spentCurrentCredit);
+            queryCredit(hiddenAssetTableName, splitVars.spentCurrentCredit);
         require(errorCode == 0, ERROR_CREDIT_SPENT);
 
         // query the new current credit1
         (errorCode, splitVars.unused) =
-            queryCredit(hiddenAssetTable, splitVars.newCurrentCredit1);
+            queryCredit(hiddenAssetTableName, splitVars.newCurrentCredit1);
         require(errorCode != 0, ERROR_CREDIT_EXIST);
 
         // query the new current credit2
         (errorCode, splitVars.unused) =
-            queryCredit(hiddenAssetTable, splitVars.newCurrentCredit2);
+            queryCredit(hiddenAssetTableName, splitVars.newCurrentCredit2);
         require(errorCode != 0, ERROR_CREDIT_EXIST);
 
         // update the transfer credit
-        Table table = openTable(hiddenAssetTable);
+        Table table = openTable(hiddenAssetTableName);
         int records = removeUnspentCredit(table, splitVars.spentCurrentCredit);
         require(records == 1, ERROR_OTHER);
 
@@ -192,12 +196,12 @@ contract HiddenAssetExample {
     }
 
     // Inserts regulation information.
-    function insertRegulationInfo(string regulationInfoTable, string currentCreditPb, string spentCreditPb, string regulationInfoPb) public {
-        Table table = openTable(regulationInfoTable);
+    function insertRegulationInfo(string regulationInfoTableName, string currentCreditPb, string spentCreditPb, string regulationInfoPb) public {
+        Table table = openTable(regulationInfoTableName);
         string[] memory currentCredits;
         string[] memory spentCredits;
         string[] memory regulationInfos;
-        (currentCredits, spentCredits, regulationInfos) = queryRegulationInfo(regulationInfoTable, currentCreditPb);
+        (currentCredits, spentCredits, regulationInfos) = queryRegulationInfo(regulationInfoTableName, currentCreditPb);
         require(currentCredits.length == 0 && spentCredits.length == 0 && regulationInfos.length == 0, ERROR_REGULATOR_DATA_EXIST);
 
         Entry entry = table.newEntry();
@@ -208,8 +212,8 @@ contract HiddenAssetExample {
     }
 
     // Queries regulation information.
-    function queryRegulationInfo(string regulationInfoTable, string currentCreditPb) public view returns(string[], string[], string[]){
-        Table table = openTable(regulationInfoTable);
+    function queryRegulationInfo(string regulationInfoTableName, string currentCreditPb) public view returns(string[], string[], string[]){
+        Table table = openTable(regulationInfoTableName);
         Condition condition = table.newCondition();
         condition.EQ(CREDIT_INDEX_FIELD, currentCreditPb);
         Entries entries = table.select(currentCreditPb, condition);
@@ -230,9 +234,9 @@ contract HiddenAssetExample {
     // Utility function section.
 
     // Gets a table handler by opening it.
-    function openTable(string hiddenAssetTable) private returns(Table) {
+    function openTable(string hiddenAssetTableName) private returns(Table) {
         TableFactory tf = TableFactory(TABLE_FACTORY_PRECOMPILED_ADDRESS);
-        Table table = tf.openTable(hiddenAssetTable);
+        Table table = tf.openTable(hiddenAssetTableName);
         return table;
     }
 
