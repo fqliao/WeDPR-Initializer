@@ -2,16 +2,6 @@ package com.webank.wedpr.example.anonymousvoting;
 
 import static org.junit.Assert.assertTrue;
 
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import org.fisco.bcos.web3j.crypto.ECKeyPair;
-import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
-
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.webank.pkeygen.exception.PkeyGenException;
 import com.webank.wedpr.anonymousvoting.AnonyousvotingUtils;
@@ -23,6 +13,7 @@ import com.webank.wedpr.anonymousvoting.VoteResult;
 import com.webank.wedpr.anonymousvoting.VoterClient;
 import com.webank.wedpr.anonymousvoting.proto.CoordinatorState;
 import com.webank.wedpr.anonymousvoting.proto.CounterState;
+import com.webank.wedpr.anonymousvoting.proto.RegulationInfo;
 import com.webank.wedpr.anonymousvoting.proto.StringToInt64Pair;
 import com.webank.wedpr.anonymousvoting.proto.StringToIntPair;
 import com.webank.wedpr.anonymousvoting.proto.SystemParametersShareRequest;
@@ -33,9 +24,19 @@ import com.webank.wedpr.anonymousvoting.proto.VoterState;
 import com.webank.wedpr.anonymousvoting.proto.VotingChoices;
 import com.webank.wedpr.anonymousvoting.proto.VotingChoices.Builder;
 import com.webank.wedpr.common.EncodedKeyPair;
+import com.webank.wedpr.common.PublicKeyCrypto;
+import com.webank.wedpr.common.PublicKeyCryptoExample;
 import com.webank.wedpr.common.SecretKey;
 import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.common.WedprException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import org.fisco.bcos.web3j.crypto.ECKeyPair;
+import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 
 /**
  * @author caryliao
@@ -77,7 +78,19 @@ public class DemoMain {
 
     public static long MAX_VOTE_NUMBER = 10000;
 
+    // NOTICE:The regulator secret key should be saved by regulator.
+    // In the example, set the variable just used to decrypt regulation information for users.
+    public static byte[] regulatorSecretKey;
+    public static byte[] regulatorPublicKey;
+    public static PublicKeyCrypto publicKeyCrypto;
+
     public static void main(String[] args) throws Exception {
+        // (Optional) Regulator init keypair.
+        ECKeyPair regulatorKeyPair = Utils.getEcKeyPair();
+        regulatorSecretKey = regulatorKeyPair.getPrivateKey().toByteArray();
+        regulatorPublicKey = regulatorKeyPair.getPublicKey().toByteArray();
+        publicKeyCrypto = new PublicKeyCryptoExample();
+
         if (args.length == 1) {
             if ("voteBounded".equals(args[0])) {
                 doVoteBounded();
@@ -112,19 +125,13 @@ public class DemoMain {
         CoordinatorState coordinatorState = initCoordinator();
 
         // 3.1 save candidates on blockchain
-        TransactionReceipt setCandidatesReceipt = storageClient.setCandidates(CANDIDATE_LIST);
-        if (!Utils.isTransactionSucceeded(setCandidatesReceipt)) {
-            throw new WedprException("Blockchain sets candidates failed!");
-        }
+        storageClient.setCandidates(CANDIDATE_LIST);
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
         // change the contract state.
         // Contract state change from Initializing to Voting.
-        TransactionReceipt nextContractStateReceipt = storageClient.nextContractState();
-        if (!Utils.isTransactionSucceeded(nextContractStateReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(nextContractStateReceipt));
-        }
+        storageClient.nextContractState();
 
         // 3.2 query hPoint from blockchain
         String hPoint = storageClient.getHPoint();
@@ -164,6 +171,7 @@ public class DemoMain {
 
         // 5 voter vote
         List<String> votingRequestList = new ArrayList<>(VOTER_COUNT);
+        List<VotingChoices> votingChoicesList = new ArrayList<>(VOTER_COUNT);
         for (int i = 0; i < VOTER_COUNT; i++) {
             Builder votingChoicesBuilder = VotingChoices.newBuilder();
             for (int j = 0; j < candidates.size(); j++) {
@@ -173,6 +181,7 @@ public class DemoMain {
                                 .setValue(VOTING_BALLOT_COUNT[i][j]));
             }
             VotingChoices votingChoices = votingChoicesBuilder.build();
+            votingChoicesList.add(votingChoices);
             VoterState voterState = voterStateList.get(i);
             String registrationResponse = registrationResponseList.get(i);
             VoteResult voteResult =
@@ -186,7 +195,10 @@ public class DemoMain {
             votingRequestList.add(voteResult.voteRequest);
         }
 
+        List<RegulationInfo> regulationInfos = getRegulationInfos(votingChoicesList);
+
         // 5.1 blockchain verify vote request
+        List<String> blankBallots = new ArrayList<>(VOTER_COUNT);
         for (int i = 0; i < VOTER_COUNT; i++) {
             String voteRequest = votingRequestList.get(i);
             TransactionReceipt verifyVoteRequestReceipt =
@@ -197,20 +209,24 @@ public class DemoMain {
             }
             String blankBallot =
                     (String)
-                            Utils.getReceiptOutputResult(storageClient.getTransactionDecoder(), verifyVoteRequestReceipt)
+                            Utils.getReceiptOutputResult(
+                                            storageClient.getTransactionDecoder(),
+                                            verifyVoteRequestReceipt)
                                     .get(0)
                                     .getData();
+            blankBallots.add(blankBallot);
             System.out.println("Save the blankBallot:" + blankBallot);
+
+            // (Optional) Upload regulation information to blockchain.
+            byte[] regulationInfo = regulationInfos.get(i).toByteArray();
+            uploadRegulationInfo(storageClient, regulatorPublicKey, blankBallot, regulationInfo);
         }
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
         // change the contract state.
         // Contract state change from Voting to CountingStep1.
-        nextContractStateReceipt = storageClient.nextContractState();
-        if (!Utils.isTransactionSucceeded(nextContractStateReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(nextContractStateReceipt));
-        }
+        storageClient.nextContractState();
 
         // 6 counter counting
         String voteStorageSumTotal = storageClient.getVoteStorageSumTotal();
@@ -228,25 +244,19 @@ public class DemoMain {
 
         // 6.1 blockchain verify count request
         for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
-            TransactionReceipt verifyCountRequestReceipt =
-                    storageClient.verifyCountRequest(
-                            Utils.protoToEncodedString(systemParameters),
-                            voteStorageSumTotal,
-                            hPointShareList.get(i),
-                            decryptedResultPartRequestList.get(i));
-            if (!Utils.isTransactionSucceeded(verifyCountRequestReceipt)) {
-                throw new WedprException(Utils.getReceiptOutputError(verifyCountRequestReceipt));
-            }
+
+            storageClient.verifyCountRequest(
+                    Utils.protoToEncodedString(systemParameters),
+                    voteStorageSumTotal,
+                    hPointShareList.get(i),
+                    decryptedResultPartRequestList.get(i));
         }
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
         // change the contract state.
         // Contract state change from CountingStep1 to CountingStep2.
-        nextContractStateReceipt = storageClient.nextContractState();
-        if (!Utils.isTransactionSucceeded(nextContractStateReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(nextContractStateReceipt));
-        }
+        storageClient.nextContractState();
 
         // 7 counter count ballot
         String decryptedResultPartStorageSumTotal =
@@ -261,24 +271,17 @@ public class DemoMain {
                 VoteResultRequest.parseFrom(Utils.stringToBytes(countResult.voteResultRequest));
 
         // 8 verify vote result and save vote result to blockchain
-        TransactionReceipt verifyVoteResultReceipt =
-                storageClient.verifyVoteResult(
-                        Utils.protoToEncodedString(systemParameters),
-                        voteStorageSumTotal,
-                        decryptedResultPartStorageSumTotal,
-                        Utils.protoToEncodedString(voteResultRequest));
-        if (!Utils.isTransactionSucceeded(verifyVoteResultReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(verifyVoteResultReceipt));
-        }
+        storageClient.verifyVoteResult(
+                Utils.protoToEncodedString(systemParameters),
+                voteStorageSumTotal,
+                decryptedResultPartStorageSumTotal,
+                Utils.protoToEncodedString(voteResultRequest));
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
         // change the contract state.
         // Contract state change from CountingStep2 to End.
-        nextContractStateReceipt = storageClient.nextContractState();
-        if (!Utils.isTransactionSucceeded(nextContractStateReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(nextContractStateReceipt));
-        }
+        storageClient.nextContractState();
 
         // 9 query vote result storage from blockchain.
         String encodedVoteResultStorage = storageClient.getVoteResultStorage();
@@ -287,6 +290,9 @@ public class DemoMain {
         List<StringToInt64Pair> resultList = voteResultStorage.getResultList();
         System.out.println("Vote result:");
         resultList.stream().forEach(System.out::println);
+
+        // (Optional) Queries regulation information for example.
+        queryAndDecryptedRegulationInfo(storageClient, blankBallots);
     }
 
     public static void doVoteUnbounded() throws Exception {
@@ -308,19 +314,13 @@ public class DemoMain {
         CoordinatorState coordinatorState = initCoordinator();
 
         // 3.1 save candidates on blockchain
-        TransactionReceipt setCandidatesReceipt = storageClient.setCandidates(CANDIDATE_LIST);
-        if (!Utils.isTransactionSucceeded(setCandidatesReceipt)) {
-            throw new WedprException("Blockchain sets candidates failed!");
-        }
+        storageClient.setCandidates(CANDIDATE_LIST);
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
         // change the contract state.
         // Contract state change from Initializing to Voting.
-        TransactionReceipt nextContractStateReceipt = storageClient.nextContractState();
-        if (!Utils.isTransactionSucceeded(nextContractStateReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(nextContractStateReceipt));
-        }
+        storageClient.nextContractState();
 
         // 3.2 query hPoint from blockchain
         String hPoint = storageClient.getHPoint();
@@ -361,7 +361,7 @@ public class DemoMain {
 
         // 5 voter vote
         List<String> votingRequestList = new ArrayList<>(VOTER_COUNT);
-
+        List<VotingChoices> votingChoicesList = new ArrayList<>(VOTER_COUNT);
         for (int i = 0; i < VOTER_COUNT; i++) {
             Builder votingChoicesBuilder = VotingChoices.newBuilder();
             for (int j = 0; j < candidates.size(); j++) {
@@ -371,6 +371,7 @@ public class DemoMain {
                                 .setValue(VOTING_BALLOT_WEIGHT[i][j]));
             }
             VotingChoices votingChoices = votingChoicesBuilder.build();
+            votingChoicesList.add(votingChoices);
             VoterState voterState = voterStateList.get(i);
             String registrationResponse = registrationResponseList.get(i);
             VoteResult voteResult =
@@ -384,7 +385,10 @@ public class DemoMain {
             votingRequestList.add(voteResult.voteRequest);
         }
 
+        List<RegulationInfo> regulationInfos = getRegulationInfos(votingChoicesList);
+
         // 5.1 blockchain verify vote request
+        List<String> blankBallots = new ArrayList<>(VOTER_COUNT);
         for (int i = 0; i < VOTER_COUNT; i++) {
             String voteRequest = votingRequestList.get(i);
             TransactionReceipt verifyVoteRequestReceipt =
@@ -395,20 +399,24 @@ public class DemoMain {
             }
             String blankBallot =
                     (String)
-                            Utils.getReceiptOutputResult(storageClient.getTransactionDecoder(), verifyVoteRequestReceipt)
+                            Utils.getReceiptOutputResult(
+                                            storageClient.getTransactionDecoder(),
+                                            verifyVoteRequestReceipt)
                                     .get(0)
                                     .getData();
+            blankBallots.add(blankBallot);
             System.out.println("Save the blankBallot:" + blankBallot);
+
+            // (Optional) Upload regulation information to blockchain.
+            byte[] regulationInfo = regulationInfos.get(i).toByteArray();
+            uploadRegulationInfo(storageClient, regulatorPublicKey, blankBallot, regulationInfo);
         }
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
         // change the contract state.
         // Contract state change from Voting to CountingStep1.
-        nextContractStateReceipt = storageClient.nextContractState();
-        if (!Utils.isTransactionSucceeded(nextContractStateReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(nextContractStateReceipt));
-        }
+        storageClient.nextContractState();
 
         // 6 counter counting
         String voteStorageSumTotal = storageClient.getVoteStorageSumTotal();
@@ -426,25 +434,19 @@ public class DemoMain {
 
         // 6.1 blockchain verify count request
         for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
-            TransactionReceipt verifyCountRequestReceipt =
-                    storageClient.verifyCountRequest(
-                            Utils.protoToEncodedString(systemParameters),
-                            voteStorageSumTotal,
-                            hPointShareList.get(i),
-                            decryptedResultPartRequestList.get(i));
-            if (!Utils.isTransactionSucceeded(verifyCountRequestReceipt)) {
-                throw new WedprException(Utils.getReceiptOutputError(verifyCountRequestReceipt));
-            }
+
+            storageClient.verifyCountRequest(
+                    Utils.protoToEncodedString(systemParameters),
+                    voteStorageSumTotal,
+                    hPointShareList.get(i),
+                    decryptedResultPartRequestList.get(i));
         }
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
         // change the contract state.
         // Contract state change from CountingStep1 to CountingStep2.
-        nextContractStateReceipt = storageClient.nextContractState();
-        if (!Utils.isTransactionSucceeded(nextContractStateReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(nextContractStateReceipt));
-        }
+        storageClient.nextContractState();
 
         // 7 counter count ballot
         String decryptedResultPartStorageSumTotal =
@@ -459,24 +461,17 @@ public class DemoMain {
                 VoteResultRequest.parseFrom(Utils.stringToBytes(countResult.voteResultRequest));
 
         // 8 verify vote result and save vote result to blockchain
-        TransactionReceipt verifyVoteResultReceipt =
-                storageClient.verifyVoteResult(
-                        Utils.protoToEncodedString(systemParameters),
-                        voteStorageSumTotal,
-                        decryptedResultPartStorageSumTotal,
-                        Utils.protoToEncodedString(voteResultRequest));
-        if (!Utils.isTransactionSucceeded(verifyVoteResultReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(verifyVoteResultReceipt));
-        }
+        storageClient.verifyVoteResult(
+                Utils.protoToEncodedString(systemParameters),
+                voteStorageSumTotal,
+                decryptedResultPartStorageSumTotal,
+                Utils.protoToEncodedString(voteResultRequest));
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
         // change the contract state.
         // Contract state change from CountingStep2 to End.
-        nextContractStateReceipt = storageClient.nextContractState();
-        if (!Utils.isTransactionSucceeded(nextContractStateReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(nextContractStateReceipt));
-        }
+        storageClient.nextContractState();
 
         // 9 query vote result storage from blockchain.
         String encodedVoteResultStorage = storageClient.getVoteResultStorage();
@@ -485,6 +480,63 @@ public class DemoMain {
         List<StringToInt64Pair> resultList = voteResultStorage.getResultList();
         System.out.println("Vote result:");
         resultList.stream().forEach(System.out::println);
+
+        // (Optional) Queries regulation information for example.
+        queryAndDecryptedRegulationInfo(storageClient, blankBallots);
+    }
+
+    private static void uploadRegulationInfo(
+            StorageExampleClient storageClient,
+            byte[] regulatorPublicKey,
+            String blankBallot,
+            byte[] regulationInfo)
+            throws Exception, WedprException {
+        String encryptedRegulationInfo =
+                Utils.bytesToString(publicKeyCrypto.encrypt(regulatorPublicKey, regulationInfo));
+        storageClient.insertRegulationInfo(blankBallot, encryptedRegulationInfo);
+    }
+
+    private static List<RegulationInfo> getRegulationInfos(List<VotingChoices> votingChoicesList)
+            throws InvalidProtocolBufferException {
+        List<RegulationInfo> regulationInfos = new ArrayList<>(VOTER_COUNT);
+        for (int i = 0; i < VOTER_COUNT; i++) {
+            List<StringToIntPair> choiceList = votingChoicesList.get(i).getChoiceList();
+            RegulationInfo.Builder regulationInfoBuilder = RegulationInfo.newBuilder();
+            for (int k = 0; k < choiceList.size(); k++) {
+                regulationInfoBuilder
+                        .addCandidate(choiceList.get(k).getKey())
+                        .addValue(choiceList.get(k).getValue());
+            }
+            RegulationInfo regulationInfo = regulationInfoBuilder.build();
+            regulationInfos.add(regulationInfo);
+        }
+        return regulationInfos;
+    }
+
+    private static void queryAndDecryptedRegulationInfo(
+            StorageExampleClient storageClient, List<String> blankBallots)
+            throws Exception, WedprException, InvalidProtocolBufferException {
+        System.out.println("\nDecrypted the regulation information about voting ballot is:\n");
+        for (String blankBallot : blankBallots) {
+            List<String> regulationInfoList = storageClient.queryRegulationInfo(blankBallot);
+            if (regulationInfoList.isEmpty()) {
+                throw new WedprException(
+                        "Queries regulation information by blankBallot: "
+                                + blankBallot
+                                + ", failed.");
+            }
+            byte[] encrypedRegulationInfo = Utils.stringToBytes(regulationInfoList.get(0));
+            byte[] decryptedRegulationInfo =
+                    publicKeyCrypto.decrypt(regulatorSecretKey, encrypedRegulationInfo);
+            RegulationInfo regulationInfo = RegulationInfo.parseFrom(decryptedRegulationInfo);
+            int candidateCount = regulationInfo.getCandidateCount();
+            System.out.println("blankBallot:" + blankBallot);
+            for (int i = 0; i < candidateCount; i++) {
+                System.out.println(
+                        regulationInfo.getCandidate(i) + ":" + regulationInfo.getValue(i));
+            }
+            System.out.println();
+        }
     }
 
     public static SystemParametersStorage makeSystemParameters(
@@ -547,11 +599,7 @@ public class DemoMain {
                     SystemParametersShareRequest.parseFrom(
                             Utils.stringToBytes(countResult.systemParametersShareRequest));
             String hPointShare = systemParametersShareRequest.getHPointShare();
-            TransactionReceipt insertHPointShareReceipt =
-                    storageExampleClient.insertHPointShare(COUNTER_ID_LIST.get(i), hPointShare);
-            if (!Utils.isTransactionSucceeded(insertHPointShareReceipt)) {
-                throw new WedprException(Utils.getReceiptOutputError(insertHPointShareReceipt));
-            }
+            storageExampleClient.insertHPointShare(COUNTER_ID_LIST.get(i), hPointShare);
             localHPointShareList.add(hPointShare);
         }
         return localHPointShareList;
@@ -581,13 +629,20 @@ public class DemoMain {
         AnonymousVotingExample anonymousVotingExample =
                 AnonyousvotingUtils.deployContract(ecKeyPair, groupID);
 
-        String voterTableName = "voter_example_" + anonymousVotingExample.getContractAddress();
-        String counterTableName = "counter_example_" + anonymousVotingExample.getContractAddress();
+        String voterTableName = "voter_" + anonymousVotingExample.getContractAddress();
+        String counterTableName = "counter_" + anonymousVotingExample.getContractAddress();
+        String regulationInfoTableName =
+                "regulationInfo_" + anonymousVotingExample.getContractAddress();
         System.out.println("###voterTableName:" + voterTableName);
         System.out.println("###counterTableName:" + counterTableName);
+        System.out.println("###regulationInfoTableName:" + regulationInfoTableName);
 
         StorageExampleClient storageClient =
-                new StorageExampleClient(anonymousVotingExample, voterTableName, counterTableName);
+                new StorageExampleClient(
+                        anonymousVotingExample,
+                        voterTableName,
+                        counterTableName,
+                        regulationInfoTableName);
 
         storageClient.init();
         return storageClient;

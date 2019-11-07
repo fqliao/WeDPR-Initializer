@@ -1,10 +1,13 @@
 package com.webank.wedpr.anonymousvoting;
 
 import com.webank.wedpr.common.CommandUtils;
+import com.webank.wedpr.common.PublicKeyCryptoExample;
+import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.example.anonymousvoting.DemoMain;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.fisco.bcos.web3j.crypto.ECKeyPair;
 import org.jline.keymap.KeyMap;
 import org.jline.reader.Binding;
 import org.jline.reader.LineReader;
@@ -267,6 +270,10 @@ public class TestClientMain {
                 }
                 maxVoteNumberFlag = false;
             }
+            ECKeyPair ecKeyPair = Utils.getEcKeyPair();
+            DemoMain.regulatorSecretKey = ecKeyPair.getPrivateKey().toByteArray();
+            DemoMain.regulatorPublicKey = ecKeyPair.getPublicKey().toByteArray();
+            DemoMain.publicKeyCrypto = new PublicKeyCryptoExample();
 
             DemoMain.CANDIDATE_LIST = candidates;
             DemoMain.COUNTER_ID_LIST = counterIds;

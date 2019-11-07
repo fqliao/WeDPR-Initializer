@@ -5,7 +5,6 @@ import com.webank.wedpr.common.WedprException;
 import java.math.BigInteger;
 import java.util.List;
 import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.fisco.bcos.web3j.tx.txdecode.InputAndOutputResult;
 import org.fisco.bcos.web3j.tx.txdecode.TransactionDecoder;
 import org.fisco.bcos.web3j.tx.txdecode.TransactionDecoderFactory;
 
@@ -14,35 +13,29 @@ public class StorageExampleClient {
     private AnonymousVotingExample anonymousVoting;
     private String voterTableName;
     private String counterTableName;
+    private String regulationInfoTableName;
     private TransactionDecoder transactionDecoder;
 
     public StorageExampleClient(
             AnonymousVotingExample anonymousVoting,
             String voterTableName,
-            String counterTableName) {
+            String counterTableName,
+            String regulationInfoTableName) {
         this.anonymousVoting = anonymousVoting;
         this.voterTableName = voterTableName;
         this.counterTableName = counterTableName;
+        this.regulationInfoTableName = regulationInfoTableName;
         transactionDecoder =
                 TransactionDecoderFactory.buildTransactionDecoder(AnonymousVotingExample.ABI, "");
     }
 
     public void init() throws Exception {
         TransactionReceipt transactionReceipt =
-                anonymousVoting.init(voterTableName, counterTableName).send();
-        InputAndOutputResult inputAndOutputResult =
-                transactionDecoder.decodeOutputReturnObject(
-                        transactionReceipt.getInput(), transactionReceipt.getOutput());
-
-        int voterTableResult =
-                ((BigInteger) inputAndOutputResult.getResult().get(0).getData()).intValue();
-        int counterTableResult =
-                ((BigInteger) inputAndOutputResult.getResult().get(1).getData()).intValue();
-        if (!Utils.isInitSucceeded(voterTableResult)) {
-            throw new WedprException("Initializes the voter table failed.");
-        }
-        if (!Utils.isInitSucceeded(counterTableResult)) {
-            throw new WedprException("Initializes the counter table failed.");
+                anonymousVoting
+                        .init(voterTableName, counterTableName, regulationInfoTableName)
+                        .send();
+        if (!Utils.isTransactionSucceeded(transactionReceipt)) {
+            throw new WedprException(Utils.getReceiptOutputError(transactionReceipt));
         }
     }
 
@@ -64,20 +57,24 @@ public class StorageExampleClient {
                 .send();
     }
 
-    public TransactionReceipt verifyCountRequest(
+    public void verifyCountRequest(
             String systemParameters,
             String voteStorage,
             String hPointShare,
             String decryptedRequest)
             throws Exception {
-        return anonymousVoting
-                .verifyCountRequest(
-                        counterTableName,
-                        systemParameters,
-                        voteStorage,
-                        hPointShare,
-                        decryptedRequest)
-                .send();
+        TransactionReceipt transactionReceipt =
+                anonymousVoting
+                        .verifyCountRequest(
+                                counterTableName,
+                                systemParameters,
+                                voteStorage,
+                                hPointShare,
+                                decryptedRequest)
+                        .send();
+        if (!Utils.isTransactionSucceeded(transactionReceipt)) {
+            throw new WedprException(Utils.getReceiptOutputError(transactionReceipt));
+        }
     }
 
     /**
@@ -88,9 +85,9 @@ public class StorageExampleClient {
      * @return
      * @throws Exception
      */
-    public TransactionReceipt insertHPointShare(String counterId, String hPointShare)
-            throws Exception {
-        return anonymousVoting.insertHPointShare(counterTableName, counterId, hPointShare).send();
+    public void insertHPointShare(String counterId, String hPointShare) throws Exception {
+        TransactionReceipt transactionReceipt =
+                anonymousVoting.insertHPointShare(counterTableName, counterId, hPointShare).send();
     }
 
     /**
@@ -110,27 +107,37 @@ public class StorageExampleClient {
      * @return
      * @throws Exception
      */
-    public TransactionReceipt nextContractState() throws Exception {
-        return anonymousVoting.nextContractState().send();
+    public void nextContractState() throws Exception {
+        TransactionReceipt transactionReceipt = anonymousVoting.nextContractState().send();
+        if (!Utils.isTransactionSucceeded(transactionReceipt)) {
+            throw new WedprException(Utils.getReceiptOutputError(transactionReceipt));
+        }
     }
 
-    public TransactionReceipt verifyVoteResult(
+    public void verifyVoteResult(
             String systemParameters,
             String voteStorageSum,
             String decryptedResultPartStorageSum,
             String voteResultRequest)
             throws Exception {
-        return anonymousVoting
-                .verifyVoteResult(
-                        systemParameters,
-                        voteStorageSum,
-                        decryptedResultPartStorageSum,
-                        voteResultRequest)
-                .send();
+        TransactionReceipt transactionReceipt =
+                anonymousVoting
+                        .verifyVoteResult(
+                                systemParameters,
+                                voteStorageSum,
+                                decryptedResultPartStorageSum,
+                                voteResultRequest)
+                        .send();
+        if (!Utils.isTransactionSucceeded(transactionReceipt)) {
+            throw new WedprException(Utils.getReceiptOutputError(transactionReceipt));
+        }
     }
 
-    public TransactionReceipt setCandidates(List<String> candidates) throws Exception {
-        return anonymousVoting.setCandidates(candidates).send();
+    public void setCandidates(List<String> candidates) throws Exception {
+        TransactionReceipt transactionReceipt = anonymousVoting.setCandidates(candidates).send();
+        if (!Utils.isTransactionSucceeded(transactionReceipt)) {
+            throw new WedprException(Utils.getReceiptOutputError(transactionReceipt));
+        }
     }
 
     public BigInteger getContractState() throws Exception {
@@ -159,5 +166,35 @@ public class StorageExampleClient {
 
     public List<String> queryVoteStoragePart(String blankBallot) throws Exception {
         return anonymousVoting.queryVoteStoragePart(voterTableName, blankBallot).send();
+    }
+
+    /**
+     * Inserts regulation information.
+     *
+     * @param blankBallot
+     * @param regulationInfoPb
+     * @return
+     * @throws Exception
+     */
+    public void insertRegulationInfo(String blankBallot, String regulationInfoPb) throws Exception {
+        TransactionReceipt transactionReceipt =
+                anonymousVoting
+                        .insertRegulationInfo(
+                                regulationInfoTableName, blankBallot, regulationInfoPb)
+                        .send();
+        if (!Utils.isTransactionSucceeded(transactionReceipt)) {
+            throw new WedprException(Utils.getReceiptOutputError(transactionReceipt));
+        }
+    }
+
+    /**
+     * Queries regulation information.
+     *
+     * @param blankBallot
+     * @return
+     * @throws Exception
+     */
+    public List<String> queryRegulationInfo(String blankBallot) throws Exception {
+        return anonymousVoting.queryRegulationInfo(regulationInfoTableName, blankBallot).send();
     }
 }

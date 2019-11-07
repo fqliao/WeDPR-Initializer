@@ -10,11 +10,11 @@ import com.webank.wedpr.assethiding.proto.SplitArgument;
 import com.webank.wedpr.assethiding.proto.SplitRequest;
 import com.webank.wedpr.assethiding.proto.TransactionInfo;
 import com.webank.wedpr.common.PublicKeyCrypto;
+import com.webank.wedpr.common.PublicKeyCryptoExample;
 import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.common.WedprException;
 import java.util.ArrayList;
 import java.util.List;
-import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 
 public class SplitCreditExampleProtocol {
     public static List<CreditCredential> splitCredit(
@@ -22,7 +22,7 @@ public class SplitCreditExampleProtocol {
             OwnerState senderOwnerState,
             OwnerState receiverOwnerState,
             TransactionInfo transactionInfo,
-            StorageExampleClient storageExampleClient,
+            StorageExampleClient storageClient,
             byte[] regulatorPublicKey)
             throws Exception {
 
@@ -78,11 +78,7 @@ public class SplitCreditExampleProtocol {
         creditCredentialResult.add(creditCredentialReceiver);
 
         // 4 verify split credit and remove old credit and save new credit on blockchain
-        TransactionReceipt transferCreditReceipt =
-                storageExampleClient.splitCredit(splitResultSenderSplitStepFinal.splitRequest);
-        if (!Utils.isTransactionSucceeded(transferCreditReceipt)) {
-            throw new WedprException("Blockchain verify split credit failed!");
-        }
+        storageClient.splitCredit(splitResultSenderSplitStepFinal.splitRequest);
         System.out.println("Blockchain verify split credit successful!");
 
         // (Optional) Upload regulation information to blockchain.
@@ -136,24 +132,14 @@ public class SplitCreditExampleProtocol {
                         publicKeyCrypto.encrypt(regulatorPublicKey, regulationInfoRecevier));
 
         // Saves regulation information on blockchain for sender and receiver respectively.
-        TransactionReceipt insertregulationInfoSenderReceipt =
-                storageExampleClient.insertRegulationInfo(
-                        regulationCurrentCreditSender,
-                        regulationSpentCredit,
-                        encryptedregulationInfoSender);
-        TransactionReceipt insertregulationInfoReceiverReceipt =
-                storageExampleClient.insertRegulationInfo(
-                        regulationCurrentCreditReceiver,
-                        regulationSpentCredit,
-                        encryptedregulationInfoReceiver);
-        if (!Utils.isTransactionSucceeded(insertregulationInfoSenderReceipt)) {
-            throw new WedprException(
-                    "Inserts sender regulation information about spliting failed.");
-        }
-        if (!Utils.isTransactionSucceeded(insertregulationInfoReceiverReceipt)) {
-            throw new WedprException(
-                    "Inserts receiver regulation information about spliting failed.");
-        }
+        storageClient.insertRegulationInfo(
+                regulationCurrentCreditSender,
+                regulationSpentCredit,
+                encryptedregulationInfoSender);
+        storageClient.insertRegulationInfo(
+                regulationCurrentCreditReceiver,
+                regulationSpentCredit,
+                encryptedregulationInfoReceiver);
 
         return creditCredentialResult;
     }

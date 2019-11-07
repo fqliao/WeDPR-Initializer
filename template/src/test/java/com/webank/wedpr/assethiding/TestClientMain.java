@@ -715,8 +715,8 @@ public class TestClientMain {
         StorageExampleClient storageClient =
                 new StorageExampleClient(
                         hiddenAssetExample,
-                        DemoMain.hiddenAssetTable,
-                        DemoMain.regulationInfoTable);
+                        DemoMain.hiddenAssetTableName,
+                        DemoMain.regulationInfoTableName);
         return storageClient;
     }
 }
