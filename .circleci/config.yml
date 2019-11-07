@@ -35,7 +35,7 @@ jobs:
       - run:
           name: run wedpr_initializer.py
           command: |
-            python3 ./wedpr_initializer.py
+            python3 ./initializer.py
       # run integration test for sdk
       - run:
           name: test

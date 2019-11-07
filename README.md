@@ -2,4 +2,4 @@
 
 pip3 install -r ./requirements.txt
 
-python3 wedpr_initializer.py
+python3 initializer.py

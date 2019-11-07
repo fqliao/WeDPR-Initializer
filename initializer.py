@@ -8,7 +8,7 @@ import os
 import subprocess
 import shutil
 
-CONFIG_PATH = './wedpr_config.toml'
+CONFIG_PATH = './config.toml'
 
 
 def init():
@@ -204,6 +204,8 @@ def check_state(cfg):
 
 if __name__ == "__main__":
     print("wedpr starter init...")
+    abs_path = os.path.abspath(CONFIG_PATH)
+    print("config path is %s" % abs_path)
     cfg = init()
     check_state(cfg)
     table_name = cfg['data']['data_table_name_prefix']
@@ -218,8 +220,9 @@ if __name__ == "__main__":
     os.mkdir(app_output_path)
     shutil.copytree("./template",
                     "{}/WeDPR-Client".format(app_output_path))
-    if 'offline_resource_path' in cfg['resource-generation']['output']:
-        offline_resource_path = cfg['resource-generation']['output']['offline_resource_path']
+
+    if 'offline_resource_path' in cfg['resource-generation']:
+        offline_resource_path = cfg['resource-generation']['offline_resource_path']
         print("try to use resource in %s" % offline_resource_path)
         # dir_must_exists("{}/WeDPR-Java-SDK".format(offline_resource_path))
         file_must_exists("{}/fisco-bcos".format(offline_resource_path))
@@ -233,9 +236,11 @@ if __name__ == "__main__":
         wedpr_jar_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK.jar'
         node_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/mini-wedpr-fisco-bcos.tar.gz'
         node_name = "mini-wedpr-fisco-bcos.tar.gz"
+        print("download WeDPR-Java-SDK.jar...")
         download_bin(wedpr_jar_download_link, "WeDPR-Java-SDK.jar")
         shutil.move("./WeDPR-Java-SDK.jar",
                     "{}/WeDPR-Client/lib/WeDPR-Java-SDK.jar".format(app_output_path))
+        print("WeDPR fisco-bcos blockchain node...")
         download_bin(node_download_link, node_name)
         (status, result)\
             = getstatusoutput('tar -zxf {} -C ./{} && '
