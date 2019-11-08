@@ -1062,6 +1062,7 @@ if [ -z ${docker_mode} ];then
         download_bin
     else
         # check_bin
+        chmod a+x ${bin_path}
         echo "use wedpr fisco-bcos"
     fi
 fi

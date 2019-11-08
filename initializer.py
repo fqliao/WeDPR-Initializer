@@ -228,11 +228,14 @@ if __name__ == "__main__":
         file_must_exists("{}/fisco-bcos".format(offline_resource_path))
         file_must_exists("{}/WeDPR-Java-SDK.jar".format(offline_resource_path))
         # shutil.copytree("{}/WeDPR-Java-SDK".format(offline_resource_path), "{}/WeDPR-Client".format(app_output_path))
-        shutil.copyfile("{}/fisco-bcos".format(offline_resource_path),
+        shutil.copy("{}/fisco-bcos".format(offline_resource_path),
                         "{}/fisco-bcos".format(app_output_path))
-        os.chmod("{}/fisco-bcos".format(app_output_path), 777)
-        shutil.copyfile("{}/WeDPR-Java-SDK.jar".format(offline_resource_path),
+        shutil.copy("{}/WeDPR-Java-SDK.jar".format(offline_resource_path),
                         "{}/WeDPR-Client/lib/WeDPR-Java-SDK.jar".format(app_output_path))
+        # shutil.copyfile("{}/fisco-bcos".format(offline_resource_path),
+        #                 "{}/fisco-bcos".format(app_output_path))
+        # shutil.copyfile("{}/WeDPR-Java-SDK.jar".format(offline_resource_path),
+        #                 "{}/WeDPR-Client/lib/WeDPR-Java-SDK.jar".format(app_output_path))
     else:
         wedpr_jar_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK.jar'
         node_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/mini-wedpr-fisco-bcos.tar.gz'

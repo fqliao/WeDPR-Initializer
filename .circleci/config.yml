@@ -88,6 +88,9 @@ jobs:
           name: test
           command: |
             cd ./WeDPR-Demo
+            ls -al ./nodes/127.0.0.1/
+            # chmod 777 ./nodes/127.0.0.1/fisco-bcos
+            ./nodes/127.0.0.1/fisco-bcos -v
             bash ./nodes/127.0.0.1/start_all.sh
             ps -ef | grep fisco
             cd ./WeDPR-Client
