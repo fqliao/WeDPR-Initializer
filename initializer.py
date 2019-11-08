@@ -285,7 +285,6 @@ if __name__ == "__main__":
         replace(asset_table_file, 'hidden_asset_regulation_info_example',
                 'hidden_asset_regulation_info_{}'.format(table_name))
 
-
     (status, result)\
         = getstatusoutput('bash ./scripts/build_chain.sh -l "127.0.0.1:4" -p 30300,20200,8545 -e {}/fisco-bcos -o {}/nodes'.format(app_output_path, app_output_path))
     print(result)

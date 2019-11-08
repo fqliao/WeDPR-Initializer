@@ -293,7 +293,7 @@ public class TestClientMain {
             }
             System.exit(0);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace();
             System.exit(-1);
         }
     }

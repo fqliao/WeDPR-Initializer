@@ -1,5 +1,6 @@
 package com.webank.wedpr.example.assethiding;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.webank.wedpr.assethiding.AssethidingUtils;
 import com.webank.wedpr.assethiding.OwnerClient;
 import com.webank.wedpr.assethiding.RedeemerClient;
@@ -23,12 +24,15 @@ import org.fisco.bcos.web3j.tuples.generated.Tuple3;
 public class DemoMain {
 
     public static String hiddenAssetTableName = "hidden_asset_example";
-    public static String regulationInfoTableName = "hidden_asset_regulation_info";
+    public static String regulationInfoTableName = "hidden_asset_regulation_info_example";
+
     public static final String SECRET_PATH = "2019_1024_06_17_26.secret";
 
     // NOTICE:The regulator secret key should be saved by regulator.
     // In the example, set the variable just used to decrypt regulation information for users.
     public static byte[] regulatorSecretKey;
+    public static byte[] regulatorPublicKey;
+    public static PublicKeyCrypto publicKeyCrypto;
 
     public enum TransferType {
         Numberic,
@@ -39,42 +43,42 @@ public class DemoMain {
         // (Optional) Regulator init keypair.
         ECKeyPair regulatorKeyPair = Utils.getEcKeyPair();
         regulatorSecretKey = regulatorKeyPair.getPrivateKey().toByteArray();
+        regulatorPublicKey = regulatorKeyPair.getPublicKey().toByteArray();
+        publicKeyCrypto = new PublicKeyCryptoExample();
 
-        byte[] regulatorPublicKey = regulatorKeyPair.getPublicKey().toByteArray();
         if (args.length == 1) {
             if ("transferNumbericAsset".equals(args[0])) {
-                transferNumbericAsset(regulatorPublicKey);
+                transferNumbericAsset();
             }
             if ("splitNumbericAsset".equals(args[0])) {
-                splitNumbericAsset(regulatorPublicKey);
+                splitNumbericAsset();
             }
             if ("transferNonnumericalAsset".equals(args[0])) {
-                transferNonnumericalAsset(regulatorPublicKey);
+                transferNonnumericalAsset();
             }
         } else {
             // By default, the demo will run the following examples.
-            transferNumbericAsset(regulatorPublicKey);
-            splitNumbericAsset(regulatorPublicKey);
+            transferNumbericAsset();
+            splitNumbericAsset();
         }
         System.exit(0);
     }
 
-    public static void transferNumbericAsset(byte[] regulatorPublicKey) throws Exception {
+    public static void transferNumbericAsset() throws Exception {
         // redeemer set value
         int value = 100;
         CreditValue creditValue = CreditValue.newBuilder().setNumericalValue(value).build();
-        doTransfer(TransferType.Numberic, creditValue, regulatorPublicKey);
+        doTransfer(TransferType.Numberic, creditValue);
     }
 
-    public static void transferNonnumericalAsset(byte[] regulatorPublicKey) throws Exception {
+    public static void transferNonnumericalAsset() throws Exception {
         // redeemer set value
         String value = "a movie ticket";
         CreditValue creditValue = CreditValue.newBuilder().setStringValue(value).build();
-        doTransfer(TransferType.NonNumberic, creditValue, regulatorPublicKey);
+        doTransfer(TransferType.NonNumberic, creditValue);
     }
 
-    private static void doTransfer(
-            TransferType transferType, CreditValue creditValue, byte[] regulatorPublicKey)
+    private static void doTransfer(TransferType transferType, CreditValue creditValue)
             throws Exception {
         /// 1 issue credit
         // owner init parameters
@@ -90,20 +94,7 @@ public class DemoMain {
         EncodedKeyPair redeemerKeyPair = Utils.getEncodedKeyPair();
 
         // Blockchain init parameters.
-        // Generate ECKeyPair to send transactions to blockchain.
-        ECKeyPair ecKeyPair = Utils.getEcKeyPair();
-        int groupID = 1;
-        // For demo purpose, we call deployContract first, then call loadContract to load the
-        // deployed contract.
-        // If your contract has been deployed, you only need to call loadContract. Otherwise, you
-        // only need to call deployContract.
-        HiddenAssetExample hiddenAssetExample = AssethidingUtils.deployContract(ecKeyPair, groupID);
-        hiddenAssetExample =
-                AssethidingUtils.loadContract(
-                        hiddenAssetExample.getContractAddress(), ecKeyPair, groupID);
-        StorageExampleClient storageClient =
-                new StorageExampleClient(
-                        hiddenAssetExample, hiddenAssetTableName, regulationInfoTableName);
+        StorageExampleClient storageClient = initBlockchain();
 
         // Get CreditCredential by running issueCredit example program.
         OwnerClient ownerClient = new OwnerClient();
@@ -118,29 +109,7 @@ public class DemoMain {
                         masterSecret,
                         regulatorPublicKey);
 
-        String encodedCurrentCredit =
-                Utils.protoToEncodedString(creditCredential.getCreditStorage().getCurrentCredit());
-        System.out.println("owner save the currentCredit:" + encodedCurrentCredit);
-        System.out.println("owner save the CreditSecret:" + creditCredential.getCreditSecret());
-        System.out.println("owner issue credit " + creditValue + " from redeemer susscessful!");
-
-        // (Optional) Queries regulation information for example.
-        Tuple3<List<String>, List<String>, List<String>> RegulationInfos =
-                storageClient.queryRegulationInfo(encodedCurrentCredit);
-        if (RegulationInfos.getValue3().isEmpty()) {
-            throw new WedprException(
-                    "Queries regulation information by currentCredit: "
-                            + encodedCurrentCredit
-                            + ", failed.");
-        }
-        byte[] encrypedRegulationInfo = Utils.stringToBytes(RegulationInfos.getValue3().get(0));
-        PublicKeyCrypto publicKeyCrypto = new PublicKeyCryptoExample();
-        byte[] decryptRegulationInfo =
-                publicKeyCrypto.decrypt(regulatorSecretKey, encrypedRegulationInfo);
-        RegulationInfo regulationInfo = RegulationInfo.parseFrom(decryptRegulationInfo);
-        System.out.println(
-                "\nDecrypted the regulation information about issuing credit is:\n"
-                        + regulationInfo);
+        printIssueCreditInfo(storageClient, publicKeyCrypto, regulatorSecretKey, creditCredential);
 
         /// 2 start transfer from sender to receiver
         // sender init OwnerState
@@ -160,7 +129,7 @@ public class DemoMain {
                         .build();
 
         // get receiver CreditCredential by running transfer example program
-        CreditCredential creditCredentialForReceiver =
+        CreditCredential receiverCreditCredential =
                 TransferCreditExampleProtocol.transferCredit(
                         transferType,
                         ownerClient,
@@ -170,42 +139,31 @@ public class DemoMain {
                         storageClient,
                         regulatorPublicKey);
 
-        String encodedCurrentCreditForRecevier =
+        String recevierEncodedCurrentCredit =
                 Utils.protoToEncodedString(
-                        creditCredentialForReceiver.getCreditStorage().getCurrentCredit());
-        System.out.println("receiver save the currentCredit:" + encodedCurrentCreditForRecevier);
+                        receiverCreditCredential.getCreditStorage().getCurrentCredit());
+        System.out.println("Receiver save the currentCredit:" + recevierEncodedCurrentCredit);
         System.out.println(
-                "owner save the CreditSecret:" + creditCredentialForReceiver.getCreditSecret());
+                "Owner save the creditSecret:" + receiverCreditCredential.getCreditSecret());
         System.out.println(
                 "Sender transfers "
-                        + creditCredentialForReceiver.getCreditSecret().getCreditValue()
+                        + receiverCreditCredential.getCreditSecret().getCreditValue()
                         + " to receiver susscessful!");
 
         // (Optional) Queries regulation information for example.
-        RegulationInfos = storageClient.queryRegulationInfo(encodedCurrentCreditForRecevier);
-        if (RegulationInfos.getValue3().isEmpty()) {
-            throw new WedprException(
-                    "Queries regulation information by currentCredit: "
-                            + encodedCurrentCreditForRecevier
-                            + ", failed.");
-        }
-        encrypedRegulationInfo = Utils.stringToBytes(RegulationInfos.getValue3().get(0));
-        decryptRegulationInfo = publicKeyCrypto.decrypt(regulatorSecretKey, encrypedRegulationInfo);
-        regulationInfo = RegulationInfo.parseFrom(decryptRegulationInfo);
-        System.out.println(
-                "\nDecrypted the regulation information about transferring credit is:\n"
-                        + regulationInfo);
+        printTransferCreditInfo(
+                storageClient, publicKeyCrypto, regulatorSecretKey, receiverCreditCredential);
 
         /// 3 fulfill credit
         FulfillCreditExampleProtocol.fulfillCredit(
                 transferType,
                 redeemerClient,
                 redeemerKeyPair,
-                creditCredentialForReceiver,
+                receiverCreditCredential,
                 storageClient);
     }
 
-    public static void splitNumbericAsset(byte[] regulatorPublicKey) throws Exception {
+    public static void splitNumbericAsset() throws Exception {
         /// 1 issue credit
         // owner init parameters
         // NOTICE: Decrypts secret from encrypted secret file and password for example.
@@ -223,13 +181,8 @@ public class DemoMain {
         CreditValue creditValue = CreditValue.newBuilder().setNumericalValue(value).build();
 
         // blockchain init parameters
-        // generate ECKeyPair to send transactions to blockchain
-        ECKeyPair ecKeyPair = Utils.getEcKeyPair();
-        int groupID = 1;
-        HiddenAssetExample hiddenAssetExample = AssethidingUtils.deployContract(ecKeyPair, groupID);
-        StorageExampleClient storageClient =
-                new StorageExampleClient(
-                        hiddenAssetExample, hiddenAssetTableName, regulationInfoTableName);
+        // Blockchain init parameters.
+        StorageExampleClient storageClient = initBlockchain();
 
         // get CreditCredential by running issueCredit example program
         OwnerClient ownerClient = new OwnerClient();
@@ -243,32 +196,7 @@ public class DemoMain {
                         ownerClient,
                         masterSecret,
                         regulatorPublicKey);
-        String encodedCurrentCredit =
-                Utils.protoToEncodedString(creditCredential.getCreditStorage().getCurrentCredit());
-        System.out.println("owner save the currentCredit:" + encodedCurrentCredit);
-        System.out.println("owner save the CreditSecret:" + creditCredential.getCreditSecret());
-        System.out.println(
-                "owner issue credit "
-                        + creditCredential.getCreditSecret().getCreditValue()
-                        + " from redeemer susscessful!");
-
-        // (Optional) Queries regulation information for example.
-        Tuple3<List<String>, List<String>, List<String>> regulationInfos =
-                storageClient.queryRegulationInfo(encodedCurrentCredit);
-        if (regulationInfos.getValue3().isEmpty()) {
-            throw new WedprException(
-                    "Queries regulation information by currentCredit: "
-                            + encodedCurrentCredit
-                            + ", failed.");
-        }
-        byte[] encrypedRegulationInfo = Utils.stringToBytes(regulationInfos.getValue3().get(0));
-        PublicKeyCrypto publicKeyCrypto = new PublicKeyCryptoExample();
-        byte[] decryptRegulationInfo =
-                publicKeyCrypto.decrypt(regulatorSecretKey, encrypedRegulationInfo);
-        RegulationInfo regulationInfo = RegulationInfo.parseFrom(decryptRegulationInfo);
-        System.out.println(
-                "\nDecrypted the regulation information about issuing credit is:\n"
-                        + regulationInfo);
+        printIssueCreditInfo(storageClient, publicKeyCrypto, regulatorSecretKey, creditCredential);
 
         /// 2 start split 60 from sender to receiver, and 40 to sender
         // sender init OwnerState
@@ -297,70 +225,172 @@ public class DemoMain {
                         storageClient,
                         regulatorPublicKey);
 
-        CreditCredential creditCredentialSender = creditCredentialResult.get(0);
-        CreditCredential creditCredentialReceiver = creditCredentialResult.get(1);
-        String encodedCurrentCreditSender =
+        CreditCredential senderCreditCredential = creditCredentialResult.get(0);
+        CreditCredential receiverCreditCredential = creditCredentialResult.get(1);
+        String senderEncodedCurrentCredit =
                 Utils.protoToEncodedString(
-                        creditCredentialSender.getCreditStorage().getCurrentCredit());
-        System.out.println("sender save the currentCredit:" + encodedCurrentCreditSender);
+                        senderCreditCredential.getCreditStorage().getCurrentCredit());
+        System.out.println("Sender save the currentCredit:" + senderEncodedCurrentCredit);
         System.out.println(
-                "sender save the CreditSecret:" + creditCredentialSender.getCreditSecret());
+                "Sender save the creditSecret:" + senderCreditCredential.getCreditSecret());
 
-        String encodedCurrentCreditReceiver =
+        String receiverEncodedCurrentCredit =
                 Utils.protoToEncodedString(
-                        creditCredentialReceiver.getCreditStorage().getCurrentCredit());
-        System.out.println("receiver save the currentCredit:" + encodedCurrentCreditReceiver);
+                        receiverCreditCredential.getCreditStorage().getCurrentCredit());
+        System.out.println("Receiver save the currentCredit:" + receiverEncodedCurrentCredit);
         System.out.println(
-                "receiver save the CreditSecret:" + creditCredentialReceiver.getCreditSecret());
+                "Receiver save the creditSecret:" + receiverCreditCredential.getCreditSecret());
 
         System.out.println(
                 "Sender transfers "
-                        + creditCredentialSender.getCreditSecret().getCreditValue()
+                        + senderCreditCredential.getCreditSecret().getCreditValue()
                         + " to receiver and "
-                        + creditCredentialReceiver.getCreditSecret().getCreditValue()
+                        + receiverCreditCredential.getCreditSecret().getCreditValue()
                         + " to itself susscessful!");
 
         // (Optional) Queries regulation information for example.
-        regulationInfos = storageClient.queryRegulationInfo(encodedCurrentCreditSender);
-        if (regulationInfos.getValue3().isEmpty()) {
-            throw new WedprException(
-                    "Queries regulation information by currentCredit: "
-                            + encodedCurrentCreditSender
-                            + ", failed.");
-        }
-        encrypedRegulationInfo = Utils.stringToBytes(regulationInfos.getValue3().get(0));
-        decryptRegulationInfo = publicKeyCrypto.decrypt(regulatorSecretKey, encrypedRegulationInfo);
-        regulationInfo = RegulationInfo.parseFrom(decryptRegulationInfo);
-        System.out.println(
-                "\nDecrypted the sender regulation information about spliting credit is:\n"
-                        + regulationInfo);
-
-        regulationInfos = storageClient.queryRegulationInfo(encodedCurrentCreditReceiver);
-        if (regulationInfos.getValue3().isEmpty()) {
-            throw new WedprException(
-                    "Queries regulation information by currentCredit: "
-                            + encodedCurrentCreditReceiver
-                            + ", failed.");
-        }
-        encrypedRegulationInfo = Utils.stringToBytes(regulationInfos.getValue3().get(0));
-        decryptRegulationInfo = publicKeyCrypto.decrypt(regulatorSecretKey, encrypedRegulationInfo);
-        regulationInfo = RegulationInfo.parseFrom(decryptRegulationInfo);
-        System.out.println(
-                "Decrypted the receiver regulation information about spliting credit is:\n"
-                        + regulationInfo);
+        printSplitCreditInfo(
+                storageClient,
+                publicKeyCrypto,
+                regulatorSecretKey,
+                senderCreditCredential,
+                receiverCreditCredential);
 
         /// 3 fulfill credit
         FulfillCreditExampleProtocol.fulfillCredit(
                 TransferType.Numberic,
                 redeemerClient,
                 redeemerKeyPair,
-                creditCredentialSender,
+                senderCreditCredential,
                 storageClient);
         FulfillCreditExampleProtocol.fulfillCredit(
                 TransferType.Numberic,
                 redeemerClient,
                 redeemerKeyPair,
-                creditCredentialReceiver,
+                receiverCreditCredential,
                 storageClient);
+    }
+
+    public static StorageExampleClient initBlockchain() throws Exception {
+        // Generate ECKeyPair to send transactions to blockchain.
+        ECKeyPair ecKeyPair = Utils.getEcKeyPair();
+        int groupID = 1;
+        // For demo purpose, we call deployContract first, then call loadContract to load the
+        // deployed contract.
+        // If your contract has been deployed, you only need to call loadContract. Otherwise, you
+        // only need to call deployContract.
+        HiddenAssetExample hiddenAssetExample = AssethidingUtils.deployContract(ecKeyPair, groupID);
+        hiddenAssetExample =
+                AssethidingUtils.loadContract(
+                        hiddenAssetExample.getContractAddress(), ecKeyPair, groupID);
+        StorageExampleClient storageClient =
+                new StorageExampleClient(
+                        hiddenAssetExample, hiddenAssetTableName, regulationInfoTableName);
+        // Create table `hidden_asset_example` and `hidden_asset_regulation_info_example`.
+        storageClient.init();
+        System.out.println("hiddenAssetTableName:" + DemoMain.hiddenAssetTableName);
+        System.out.println("regulationInfoTableName:" + DemoMain.regulationInfoTableName);
+
+        return storageClient;
+    }
+
+    public static void printIssueCreditInfo(
+            StorageExampleClient storageClient,
+            PublicKeyCrypto publicKeyCrypto,
+            byte[] regulatorSecretKey,
+            CreditCredential creditCredential)
+            throws Exception, WedprException, InvalidProtocolBufferException {
+        String encodedCurrentCredit =
+                Utils.protoToEncodedString(creditCredential.getCreditStorage().getCurrentCredit());
+        System.out.println("owner save the currentCredit:" + encodedCurrentCredit);
+        System.out.println("owner save the creditSecret:" + creditCredential.getCreditSecret());
+
+        // (Optional) Queries regulation information for example.
+        Tuple3<List<String>, List<String>, List<String>> RegulationInfos =
+                storageClient.queryRegulationInfo(encodedCurrentCredit);
+        byte[] encrypedRegulationInfo = Utils.stringToBytes(RegulationInfos.getValue3().get(0));
+        byte[] decryptRegulationInfo =
+                publicKeyCrypto.decrypt(regulatorSecretKey, encrypedRegulationInfo);
+        RegulationInfo regulationInfo = RegulationInfo.parseFrom(decryptRegulationInfo);
+        System.out.println(
+                "\nDecrypted the regulation information about issuing credit is:\n"
+                        + regulationInfo);
+    }
+
+    public static void printTransferCreditInfo(
+            StorageExampleClient storageClient,
+            PublicKeyCrypto publicKeyCrypto,
+            byte[] regulatorSecretKey,
+            CreditCredential receiverCreditCredential)
+            throws Exception {
+        String recevierEncodedCurrentCredit =
+                Utils.protoToEncodedString(
+                        receiverCreditCredential.getCreditStorage().getCurrentCredit());
+        System.out.println("Receiver save the currentCredit:" + recevierEncodedCurrentCredit);
+        System.out.println(
+                "Receiver save the creditSecret:" + receiverCreditCredential.getCreditSecret());
+        System.out.println(
+                "Sender transfers "
+                        + receiverCreditCredential.getCreditSecret().getCreditValue()
+                        + " to receiver susscessful!");
+
+        // (Optional) Queries regulation information for example.
+        Tuple3<List<String>, List<String>, List<String>> regulationInfos =
+                storageClient.queryRegulationInfo(recevierEncodedCurrentCredit);
+        byte[] encrypedRegulationInfo = Utils.stringToBytes(regulationInfos.getValue3().get(0));
+        byte[] decryptRegulationInfo =
+                publicKeyCrypto.decrypt(regulatorSecretKey, encrypedRegulationInfo);
+        RegulationInfo regulationInfo = RegulationInfo.parseFrom(decryptRegulationInfo);
+        System.out.println(
+                "\nDecrypted the regulation information about transferring credit is:\n"
+                        + regulationInfo);
+    }
+
+    public static void printSplitCreditInfo(
+            StorageExampleClient storageClient,
+            PublicKeyCrypto publicKeyCrypto,
+            byte[] regulatorSecretKey,
+            CreditCredential senderReturnCreditCredential,
+            CreditCredential receiverCreditCredential)
+            throws Exception {
+        String senderEncodedCurrentCredit =
+                Utils.protoToEncodedString(
+                        senderReturnCreditCredential.getCreditStorage().getCurrentCredit());
+        System.out.println("Sender save the currentCredit:" + senderEncodedCurrentCredit);
+        System.out.println(
+                "Sender save the creditSecret:" + senderReturnCreditCredential.getCreditSecret());
+
+        String receiverEncodedCurrentCredit =
+                Utils.protoToEncodedString(
+                        receiverCreditCredential.getCreditStorage().getCurrentCredit());
+        System.out.println("Receiver save the currentCredit:" + receiverEncodedCurrentCredit);
+        System.out.println(
+                "Receiver save the creditSecret:" + receiverCreditCredential.getCreditSecret());
+        System.out.println(
+                "Sender transfers "
+                        + senderReturnCreditCredential.getCreditSecret().getCreditValue()
+                        + " to receiver and "
+                        + receiverCreditCredential.getCreditSecret().getCreditValue()
+                        + " to itself susscessful!");
+
+        // (Optional) Queries regulation information for example.
+        Tuple3<List<String>, List<String>, List<String>> regulationInfos =
+                storageClient.queryRegulationInfo(senderEncodedCurrentCredit);
+        byte[] encrypedRegulationInfo = Utils.stringToBytes(regulationInfos.getValue3().get(0));
+
+        byte[] decryptRegulationInfo =
+                publicKeyCrypto.decrypt(regulatorSecretKey, encrypedRegulationInfo);
+        RegulationInfo regulationInfo = RegulationInfo.parseFrom(decryptRegulationInfo);
+        System.out.println(
+                "\nDecrypted the sender regulation information about spliting credit is:\n"
+                        + regulationInfo);
+
+        regulationInfos = storageClient.queryRegulationInfo(receiverEncodedCurrentCredit);
+        encrypedRegulationInfo = Utils.stringToBytes(regulationInfos.getValue3().get(0));
+        decryptRegulationInfo = publicKeyCrypto.decrypt(regulatorSecretKey, encrypedRegulationInfo);
+        regulationInfo = RegulationInfo.parseFrom(decryptRegulationInfo);
+        System.out.println(
+                "Decrypted the receiver regulation information about spliting credit is:\n"
+                        + regulationInfo);
     }
 }

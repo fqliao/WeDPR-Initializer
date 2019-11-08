@@ -6,11 +6,12 @@ import com.webank.wedpr.assethiding.proto.OwnerState;
 import com.webank.wedpr.assethiding.proto.TransactionInfo;
 import com.webank.wedpr.common.CommandUtils;
 import com.webank.wedpr.common.EncodedKeyPair;
+import com.webank.wedpr.common.PublicKeyCrypto;
+import com.webank.wedpr.common.PublicKeyCryptoExample;
 import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.example.assethiding.DemoMain;
 import com.webank.wedpr.example.assethiding.DemoMain.TransferType;
 import com.webank.wedpr.example.assethiding.FulfillCreditExampleProtocol;
-import com.webank.wedpr.example.assethiding.HiddenAssetExample;
 import com.webank.wedpr.example.assethiding.IssueCreditExampleProtocol;
 import com.webank.wedpr.example.assethiding.SplitCreditExampleProtocol;
 import com.webank.wedpr.example.assethiding.StorageExampleClient;
@@ -21,9 +22,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,14 +53,21 @@ public class TestClientMain {
         OwnerClient ownerClient = new OwnerClient();
         RedeemerClient redeemerClient = new RedeemerClient();
         EncodedKeyPair redeemerKeyPair = Utils.getEncodedKeyPair();
-        StorageExampleClient storageClient = getStorageClient();
-        ECKeyPair regulatorKeyPair = Utils.getEcKeyPair();
-        // byte[] regulatorSecretKey = regulatorKeyPair.getPrivateKey().toByteArray();
-        byte[] regulatorPublicKey = regulatorKeyPair.getPublicKey().toByteArray();
 
-        HashMap<String, UserWallet> userWallets = new HashMap<>();
+        StorageExampleClient storageClient = DemoMain.initBlockchain();
+
         System.out.println("Welcome to test hidden asset!");
         CommandUtils.help();
+        System.out.println("hiddenAssetTableName:" + DemoMain.hiddenAssetTableName);
+        System.out.println("regulationInfoTableName:" + DemoMain.regulationInfoTableName);
+        System.out.println();
+
+        ECKeyPair regulatorKeyPair = Utils.getEcKeyPair();
+        byte[] regulatorSecretKey = regulatorKeyPair.getPrivateKey().toByteArray();
+        byte[] regulatorPublicKey = regulatorKeyPair.getPublicKey().toByteArray();
+        PublicKeyCrypto publicKeyCrypto = new PublicKeyCryptoExample();
+
+        HashMap<String, UserWallet> userWallets = new HashMap<>();
         LineReader lineReader = CommandUtils.getLineReader();
         KeyMap<Binding> keymap = lineReader.getKeyMaps().get(LineReader.MAIN);
         keymap.bind(new Reference("beginning-of-line"), "\033[1~");
@@ -116,6 +121,13 @@ public class TestClientMain {
                                         ownerClient,
                                         masterSecret,
                                         regulatorPublicKey);
+
+                        DemoMain.printIssueCreditInfo(
+                                storageClient,
+                                publicKeyCrypto,
+                                regulatorSecretKey,
+                                creditCredential);
+
                         creditCredentials = userWallet.creditCredentials;
                         creditCredentials.add(creditCredential);
                         List<String> stringBalance = userWallet.stringBalance;
@@ -164,6 +176,13 @@ public class TestClientMain {
                                         ownerClient,
                                         masterSecret,
                                         regulatorPublicKey);
+
+                        DemoMain.printIssueCreditInfo(
+                                storageClient,
+                                publicKeyCrypto,
+                                regulatorSecretKey,
+                                creditCredential);
+
                         userWallet.creditCredentials.add(creditCredential);
                         long issuedValue =
                                 creditCredential
@@ -393,6 +412,12 @@ public class TestClientMain {
                                         storageClient,
                                         regulatorPublicKey);
 
+                        DemoMain.printTransferCreditInfo(
+                                storageClient,
+                                publicKeyCrypto,
+                                regulatorSecretKey,
+                                receiverCreditCredential);
+
                         // set sender data
                         senderWallet.creditCredentials.remove(transferCreditCredentials);
                         senderWallet.stringBalance.remove(transferStringValue);
@@ -484,6 +509,12 @@ public class TestClientMain {
                                         transactionInfo,
                                         storageClient,
                                         regulatorPublicKey);
+
+                        DemoMain.printTransferCreditInfo(
+                                storageClient,
+                                publicKeyCrypto,
+                                regulatorSecretKey,
+                                receiverCreditCredential);
 
                         // set sender data
                         senderWallet.creditCredentials.remove(transferCreditCredentials);
@@ -614,8 +645,17 @@ public class TestClientMain {
                                     transactionInfo,
                                     storageClient,
                                     regulatorPublicKey);
+
                     CreditCredential senderReturnCreditCredential = creditCredentialResult.get(0);
                     CreditCredential receiverCreditCredential = creditCredentialResult.get(1);
+
+                    DemoMain.printSplitCreditInfo(
+                            storageClient,
+                            publicKeyCrypto,
+                            regulatorSecretKey,
+                            senderReturnCreditCredential,
+                            receiverCreditCredential);
+
                     // set sender data
                     senderWallet.creditCredentials.remove(splitCreditCredentials);
                     senderWallet.creditCredentials.add(senderReturnCreditCredential);
@@ -701,22 +741,5 @@ public class TestClientMain {
         String encryptedSecret = new String(Files.readAllBytes(path));
         masterSecret = Utils.decryptSecret(encryptedSecret, "example123");
         return masterSecret;
-    }
-
-    private static StorageExampleClient getStorageClient()
-            throws InvalidAlgorithmParameterException, NoSuchAlgorithmException,
-                    NoSuchProviderException, Exception {
-        ECKeyPair ecKeyPair = Utils.getEcKeyPair();
-        int groupID = 1;
-        HiddenAssetExample hiddenAssetExample = AssethidingUtils.deployContract(ecKeyPair, groupID);
-        hiddenAssetExample =
-                AssethidingUtils.loadContract(
-                        hiddenAssetExample.getContractAddress(), ecKeyPair, groupID);
-        StorageExampleClient storageClient =
-                new StorageExampleClient(
-                        hiddenAssetExample,
-                        DemoMain.hiddenAssetTableName,
-                        DemoMain.regulationInfoTableName);
-        return storageClient;
     }
 }
