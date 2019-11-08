@@ -44,6 +44,10 @@ import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
  */
 public class DemoMain {
 
+    public static String voterTableName = "voter_";
+    public static String counterTableName = "counter_";
+    public static String regulationInfoTableName = "regulation_info_";
+
     public static List<String> CANDIDATE_LIST = Arrays.asList("Kitten", "Doge", "Bunny");
     public static List<String> COUNTER_ID_LIST = Arrays.asList("10086", "10010");
 
@@ -629,13 +633,16 @@ public class DemoMain {
         AnonymousVotingExample anonymousVotingExample =
                 AnonyousvotingUtils.deployContract(ecKeyPair, groupID);
 
-        String voterTableName = "voter_" + anonymousVotingExample.getContractAddress();
-        String counterTableName = "counter_" + anonymousVotingExample.getContractAddress();
-        String regulationInfoTableName =
-                "regulationInfo_" + anonymousVotingExample.getContractAddress();
-        System.out.println("###voterTableName:" + voterTableName);
-        System.out.println("###counterTableName:" + counterTableName);
-        System.out.println("###regulationInfoTableName:" + regulationInfoTableName);
+        voterTableName =
+                voterTableName + anonymousVotingExample.getContractAddress().substring(2, 10);
+        counterTableName =
+                counterTableName + anonymousVotingExample.getContractAddress().substring(2, 10);
+        regulationInfoTableName =
+                regulationInfoTableName
+                        + anonymousVotingExample.getContractAddress().substring(2, 10);
+        System.out.println("voterTableName:" + voterTableName);
+        System.out.println("counterTableName:" + counterTableName);
+        System.out.println("regulationInfoTableName:" + regulationInfoTableName);
 
         StorageExampleClient storageClient =
                 new StorageExampleClient(

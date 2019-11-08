@@ -54,9 +54,6 @@ public class IssueCreditExampleProtocol {
         System.out.println("Redeemer confirm credit successful!");
 
         // 1.3 blockchain: verfiy issue credit
-        // Create table `hidden_asset_example` and `hidden_asset_regulation_info`.
-        storageClient.init();
-
         // verify issueCredit and save credit on blockchain
         storageClient.issueCredit(redeemerResult.issueArgument);
         System.out.println("\nBlockchain verify issue credit successful!");
