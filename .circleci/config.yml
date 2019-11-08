@@ -11,7 +11,7 @@ jobs:
       - checkout
       - run: sudo bash .ci/ci_check_commit.sh
 
-  build_test:
+  build_online_test:
     docker:
       # specify the version you desire here
       - image: circleci/openjdk:9.0.1-jdk
@@ -45,9 +45,64 @@ jobs:
             cd ./WeDPR-Client
             bash gradlew build --info
             bash gradlew test --info
+
+  build_offline_test:
+    docker:
+      # specify the version you desire here
+      - image: circleci/openjdk:9.0.1-jdk
+        environment:
+          POSTGRES_USER: root
+    environment:
+      # Customize the JVM maximum heap limit
+      JVM_OPTS: -Xmx3200m
+      TERM: dumb
+
+    steps:
+      - checkout
+      # Download and cache dependencies
+      - run:
+          name: dependencies
+          command: |
+            sudo apt-get update
+            sudo apt install -y openssl curl
+            sudo apt install python3-pip
+            pip3 install -r requirements.txt
+      - run:
+          name: download_bin
+          command: |
+            curl -LO https://github.com/WeDPR/TestBinary/releases/download/v0.1/mini-wedpr-fisco-bcos.tar.gz
+            tar -zxf ./mini-wedpr-fisco-bcos.tar.gz
+            curl -LO https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK.jar
+      - run:
+          name: run wedpr_initializer.py
+          command: |
+            mkdir resources
+            # chmod u+x ./fisco-bcos
+            ./fisco-bcos -v
+            cp fisco-bcos ./resources
+            cp WeDPR-Java-SDK.jar ./resources
+            sed -i 's|# offline_resource_path = "./resources"|offline_resource_path = "./resources"|g' ./config.toml
+            python3 ./initializer.py
+      # run integration test for sdk
+      - run:
+          name: test
+          command: |
+            cd ./WeDPR-Demo
+            ls -al ./nodes/127.0.0.1/
+            # chmod 777 ./nodes/127.0.0.1/fisco-bcos
+            ./nodes/127.0.0.1/fisco-bcos -v
+            bash ./nodes/127.0.0.1/start_all.sh
+            ps -ef | grep fisco
+            cd ./WeDPR-Client
+            curl -LO https://github.com/WeDPR/TestBinary/releases/download/v0.1/linux_WeDPR_dynamic_lib.tar.gz
+            tar -zxf linux_WeDPR_dynamic_lib.tar.gz
+            cp -r ./WeDPR_dynamic_lib src/main/resources/WeDPR_dynamic_lib
+            bash gradlew build --info
+            bash gradlew test --info
 workflows:
   version: 2
   wedpr_sdk:
     jobs:
       - scan_code
-      - build_test
+      - build_online_test
+      - build_offline_test

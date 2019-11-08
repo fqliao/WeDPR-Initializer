@@ -228,10 +228,14 @@ if __name__ == "__main__":
         file_must_exists("{}/fisco-bcos".format(offline_resource_path))
         file_must_exists("{}/WeDPR-Java-SDK.jar".format(offline_resource_path))
         # shutil.copytree("{}/WeDPR-Java-SDK".format(offline_resource_path), "{}/WeDPR-Client".format(app_output_path))
-        shutil.copyfile("{}/fisco-bcos".format(offline_resource_path),
+        shutil.copy("{}/fisco-bcos".format(offline_resource_path),
                         "{}/fisco-bcos".format(app_output_path))
-        shutil.copyfile("{}/WeDPR-Java-SDK.jar".format(offline_resource_path),
+        shutil.copy("{}/WeDPR-Java-SDK.jar".format(offline_resource_path),
                         "{}/WeDPR-Client/lib/WeDPR-Java-SDK.jar".format(app_output_path))
+        # shutil.copyfile("{}/fisco-bcos".format(offline_resource_path),
+        #                 "{}/fisco-bcos".format(app_output_path))
+        # shutil.copyfile("{}/WeDPR-Java-SDK.jar".format(offline_resource_path),
+        #                 "{}/WeDPR-Client/lib/WeDPR-Java-SDK.jar".format(app_output_path))
     else:
         wedpr_jar_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK.jar'
         node_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/mini-wedpr-fisco-bcos.tar.gz'
@@ -260,10 +264,12 @@ if __name__ == "__main__":
         vote_table_file = '{}/src/main/java/com/webank/wedpr/example/anonymousvoting/DemoMain.java'.format(
             client_path)
         file_must_exists(vote_table_file)
-        replace(vote_table_file, 'voter_example_',
-                'voter_example_{}'.format(table_name))
-        replace(vote_table_file, 'counter_example_',
-                'counter_example_{}'.format(table_name))
+        replace(vote_table_file, 'voter_',
+                'voter_{}'.format(table_name))
+        replace(vote_table_file, 'counter_',
+                'counter_{}'.format(table_name))
+        replace(vote_table_file, 'regulation_info_',
+                'regulation_info_{}'.format(table_name))
     if not hidden_asset:
         # shutil.rmtree('{}/src/main/java/com/webank/wedpr/assethiding'.format(sdk_name))
         shutil.rmtree(
@@ -275,7 +281,10 @@ if __name__ == "__main__":
             client_path)
         file_must_exists(asset_table_file)
         replace(asset_table_file, 'hidden_asset_example',
-                'hidden_asset_example_{}'.format(table_name))
+                'hidden_asset_{}'.format(table_name))
+        replace(asset_table_file, 'hidden_asset_regulation_info_example',
+                'hidden_asset_regulation_info_{}'.format(table_name))
+
 
     (status, result)\
         = getstatusoutput('bash ./scripts/build_chain.sh -l "127.0.0.1:4" -p 30300,20200,8545 -e {}/fisco-bcos -o {}/nodes'.format(app_output_path, app_output_path))
