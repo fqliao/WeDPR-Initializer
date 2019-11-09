@@ -95,6 +95,8 @@ public class DemoMain {
 
         // Blockchain init parameters.
         StorageExampleClient storageClient = initBlockchain();
+        System.out.println("hiddenAssetTableName:" + DemoMain.hiddenAssetTableName);
+        System.out.println("regulationInfoTableName:" + DemoMain.regulationInfoTableName);
 
         // Get CreditCredential by running issueCredit example program.
         OwnerClient ownerClient = new OwnerClient();
@@ -183,6 +185,8 @@ public class DemoMain {
         // blockchain init parameters
         // Blockchain init parameters.
         StorageExampleClient storageClient = initBlockchain();
+        System.out.println("hiddenAssetTableName:" + DemoMain.hiddenAssetTableName);
+        System.out.println("regulationInfoTableName:" + DemoMain.regulationInfoTableName);
 
         // get CreditCredential by running issueCredit example program
         OwnerClient ownerClient = new OwnerClient();
@@ -288,8 +292,6 @@ public class DemoMain {
                         hiddenAssetExample, hiddenAssetTableName, regulationInfoTableName);
         // Create table `hidden_asset_example` and `hidden_asset_regulation_info_example`.
         storageClient.init();
-        System.out.println("hiddenAssetTableName:" + DemoMain.hiddenAssetTableName);
-        System.out.println("regulationInfoTableName:" + DemoMain.regulationInfoTableName);
 
         return storageClient;
     }
