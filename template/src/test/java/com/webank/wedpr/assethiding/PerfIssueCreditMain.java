@@ -28,7 +28,7 @@ public class PerfIssueCreditMain {
         RateLimiter limiter = RateLimiter.create(qps);
         Integer area = count / 10;
         final Integer total = count;
-        System.out.println("Start issue credit test，total：" + count);
+        System.out.println("Start issue credit test, total: " + count);
         for (Integer i = 0; i < count; ++i) {
             threadPool.execute(
                     new Runnable() {
