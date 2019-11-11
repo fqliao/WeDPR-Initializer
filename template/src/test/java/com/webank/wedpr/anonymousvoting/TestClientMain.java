@@ -261,10 +261,14 @@ public class TestClientMain {
                     continue;
                 }
                 Arrays.sort(blankBallots);
-                if (maxVoteNumber < blankBallots[blankBallots.length - 1]) {
+                int sumBlankBallots = 0;
+                for (int v : blankBallots) {
+                    sumBlankBallots = sumBlankBallots + v;
+                }
+                if (maxVoteNumber <= sumBlankBallots) {
                     System.out.println(
-                            "Error: please provide max vote number greater than the max voting ballot count "
-                                    + blankBallots[blankBallots.length - 1]
+                            "Error: please provide max vote number greater than the max blank ballots count "
+                                    + sumBlankBallots
                                     + ".\n");
                     continue;
                 }
