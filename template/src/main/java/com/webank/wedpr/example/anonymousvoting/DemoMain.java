@@ -9,10 +9,13 @@ import com.webank.wedpr.anonymousvoting.CoordinateResult;
 import com.webank.wedpr.anonymousvoting.CoordinatorClient;
 import com.webank.wedpr.anonymousvoting.CountResult;
 import com.webank.wedpr.anonymousvoting.CounterClient;
+import com.webank.wedpr.anonymousvoting.VerifierClient;
+import com.webank.wedpr.anonymousvoting.VerifyResult;
 import com.webank.wedpr.anonymousvoting.VoteResult;
 import com.webank.wedpr.anonymousvoting.VoterClient;
 import com.webank.wedpr.anonymousvoting.proto.CoordinatorState;
 import com.webank.wedpr.anonymousvoting.proto.CounterState;
+import com.webank.wedpr.anonymousvoting.proto.RegistrationResponse;
 import com.webank.wedpr.anonymousvoting.proto.RegulationInfo;
 import com.webank.wedpr.anonymousvoting.proto.StringToInt64Pair;
 import com.webank.wedpr.anonymousvoting.proto.StringToIntPair;
@@ -171,7 +174,24 @@ public class DemoMain {
                             BLANK_BALLOT_COUNT[i],
                             registrationRequestList.get(i));
             registrationResponseList.add(coordinateResult.registrationResponse);
+
+            RegistrationResponse decodedRegistrationResponse =
+                    RegistrationResponse.parseFrom(
+                            Utils.stringToBytes(coordinateResult.registrationResponse));
+            System.out.println("registrationResponse:" + decodedRegistrationResponse);
         }
+
+        // 4.3 verifier verify blank ballot
+        VerifierClient verifierClient = new VerifierClient();
+        for (int i = 0; i < VOTER_COUNT; i++) {
+            VerifyResult verifyResult =
+                    verifierClient.verifyBlankBallot(
+                            registrationRequestList.get(i), registrationResponseList.get(i));
+            if (verifyResult.wedprErrorMessage != null) {
+                throw new WedprException(verifyResult.wedprErrorMessage);
+            }
+        }
+        System.out.println("Verify voter blank ballot successful.\n");
 
         // 5 voter vote
         List<String> votingRequestList = new ArrayList<>(VOTER_COUNT);
@@ -353,7 +373,6 @@ public class DemoMain {
         // 4.2 coordinator certify
         CoordinatorClient coordinatorClient = new CoordinatorClient();
         List<String> registrationResponseList = new ArrayList<>(VOTER_COUNT);
-
         for (int i = 0; i < VOTER_COUNT; i++) {
             CoordinateResult coordinateResult =
                     coordinatorClient.certifyUnboundedVoter(
@@ -361,7 +380,24 @@ public class DemoMain {
                             BLANK_BALLOT_WEIGHT[i],
                             registrationRequestList.get(i));
             registrationResponseList.add(coordinateResult.registrationResponse);
+
+            RegistrationResponse decodedRegistrationResponse =
+                    RegistrationResponse.parseFrom(
+                            Utils.stringToBytes(coordinateResult.registrationResponse));
+            System.out.println("registrationResponse:" + decodedRegistrationResponse);
         }
+
+        // 4.3 verifier verify blank ballot
+        VerifierClient verifierClient = new VerifierClient();
+        for (int i = 0; i < VOTER_COUNT; i++) {
+            VerifyResult verifyResult =
+                    verifierClient.verifyBlankBallot(
+                            registrationRequestList.get(i), registrationResponseList.get(i));
+            if (verifyResult.wedprErrorMessage != null) {
+                throw new WedprException(verifyResult.wedprErrorMessage);
+            }
+        }
+        System.out.println("Verify voter blank ballot successful.\n");
 
         // 5 voter vote
         List<String> votingRequestList = new ArrayList<>(VOTER_COUNT);
