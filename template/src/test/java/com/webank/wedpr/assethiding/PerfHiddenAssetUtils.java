@@ -25,8 +25,6 @@ import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.fisco.bcos.web3j.tx.gas.StaticGasProvider;
 
 class IssueCreditParams {
-    public OwnerClient ownerClient;
-    public RedeemerClient redeemerClient;
     public HiddenAssetExamplePerf hiddenAssetExamplePerf;
     public EncodedKeyPair redeemerKeyPair;
     public String hiddenAssetTableName;
@@ -73,23 +71,21 @@ public class PerfHiddenAssetUtils {
         }
 
         // 3 Owner issue credit.
-        OwnerClient ownerClient = new OwnerClient();
         Path path = Paths.get(ClassLoader.getSystemResource(DemoMain.SECRET_PATH).toURI());
         String encryptedSecret = new String(Files.readAllBytes(path));
         byte[] masterSecret = Utils.decryptSecret(encryptedSecret, "example123");
         String secretKey = Utils.getSecretKey(masterSecret).getSecretKey();
-        IssueResult issueResult = ownerClient.issueCredit(secretKey);
-        if (Utils.hasWedprError(issueResult)) {
-            throw new WedprException(issueResult.wedprErrorMessage);
+        OwnerResult ownerResult = OwnerClient.issueCredit(secretKey);
+        if (Utils.hasWedprError(ownerResult)) {
+            throw new WedprException(ownerResult.wedprErrorMessage);
         }
 
         // 4 Redeemer confirm credit.
-        RedeemerClient redeemerClient = new RedeemerClient();
         EncodedKeyPair redeemerKeyPair = Utils.getEncodedKeyPair();
         int value = 100;
         CreditValue creditValue = CreditValue.newBuilder().setNumericalValue(value).build();
         RedeemerResult redeemerResult =
-                redeemerClient.confirmNumericalCredit(redeemerKeyPair, issueResult, creditValue);
+                RedeemerClient.confirmNumericalCredit(redeemerKeyPair, ownerResult, creditValue);
 
         if (Utils.hasWedprError(redeemerResult)) {
             throw new WedprException(redeemerResult.wedprErrorMessage);
@@ -102,10 +98,8 @@ public class PerfHiddenAssetUtils {
                 Utils.protoToEncodedString(
                         issueArgument.toBuilder().clearCreditValue().clearRG().build());
         CreditCredential creditCredential =
-                ownerClient.makeCreditCredential(redeemerResult, secretKey);
+                OwnerClient.makeCreditCredential(redeemerResult, secretKey);
         IssueCreditParams issueCreditParams = new IssueCreditParams();
-        issueCreditParams.ownerClient = ownerClient;
-        issueCreditParams.redeemerClient = redeemerClient;
         issueCreditParams.hiddenAssetExamplePerf = hiddenAssetExamplePerf;
         issueCreditParams.redeemerKeyPair = redeemerKeyPair;
         issueCreditParams.hiddenAssetTableName = hiddenAssetTableName;
@@ -120,7 +114,6 @@ public class PerfHiddenAssetUtils {
     public static TransferCreditParams getTransferCreditParams() throws Exception {
         // Gets a creditCredential and redeemer execute fulfill credit.
         IssueCreditParams issueCreditParams = PerfHiddenAssetUtils.getIssueCreditParams();
-        OwnerClient ownerClient = issueCreditParams.ownerClient;
         HiddenAssetExamplePerf hiddenAssetExamplePerf = issueCreditParams.hiddenAssetExamplePerf;
         String hiddenAssetTableName = issueCreditParams.hiddenAssetTableName;
         CreditValue creditValue = issueCreditParams.creditValue;
@@ -142,27 +135,27 @@ public class PerfHiddenAssetUtils {
         // 1 receiver transfer step1
         String encodedTransactionInfo = Utils.protoToEncodedString(transactionInfo);
         String encodedReceiverOwnerState = Utils.protoToEncodedString(receiverOwnerState);
-        TransferResult transferResult = null;
-        transferResult =
-                ownerClient.receiverTransferNumericalStep1(
+        OwnerResult ownerResult = null;
+        ownerResult =
+                OwnerClient.receiverTransferNumericalStep1(
                         encodedReceiverOwnerState, encodedTransactionInfo);
 
-        if (Utils.hasWedprError(transferResult)) {
-            throw new WedprException(transferResult.wedprErrorMessage);
+        if (Utils.hasWedprError(ownerResult)) {
+            throw new WedprException(ownerResult.wedprErrorMessage);
         }
         // 2 sender transfer step final
         String encodedSenderOwnerState = Utils.protoToEncodedString(senderOwnerState);
-        String encodedTransferArgument = transferResult.transferArgument;
-        transferResult =
-                ownerClient.senderTransferNumericalFinal(
+        String encodedTransferArgument = ownerResult.transferArgument;
+        ownerResult =
+                OwnerClient.senderTransferNumericalFinal(
                         encodedSenderOwnerState, encodedTransactionInfo, encodedTransferArgument);
-        if (Utils.hasWedprError(transferResult)) {
-            throw new WedprException(transferResult.wedprErrorMessage);
+        if (Utils.hasWedprError(ownerResult)) {
+            throw new WedprException(ownerResult.wedprErrorMessage);
         }
         // 3 verify transfer credit and remove old credit and save new credit on blockchain
         // Clear RG in transferRequest.
         TransferRequest transferRequest =
-                TransferRequest.parseFrom(Utils.stringToBytes(transferResult.transferRequest));
+                TransferRequest.parseFrom(Utils.stringToBytes(ownerResult.transferRequest));
         TransferArgument transferArgument =
                 transferRequest.toBuilder().getArgumentBuilder().clearRG().build();
         String handledTransferRequest =
@@ -183,7 +176,6 @@ public class PerfHiddenAssetUtils {
     public static SplitCreditParams getSplitCreditParams() throws Exception {
         // Gets a creditCredential and redeemer execute fulfill credit.
         IssueCreditParams issueCreditParams = PerfHiddenAssetUtils.getIssueCreditParams();
-        OwnerClient ownerClient = issueCreditParams.ownerClient;
         HiddenAssetExamplePerf hiddenAssetExamplePerf = issueCreditParams.hiddenAssetExamplePerf;
         String hiddenAssetTableName = issueCreditParams.hiddenAssetTableName;
         byte[] masterSecret = issueCreditParams.masterSecret;
@@ -207,8 +199,8 @@ public class PerfHiddenAssetUtils {
 
         // 1 sender split step1
         String encodedSenderOwnerState = Utils.protoToEncodedString(senderOwnerState);
-        SplitResult splitResultSenderSplitStep1 =
-                ownerClient.senderSplitStep1(encodedSenderOwnerState);
+        OwnerResult splitResultSenderSplitStep1 =
+                OwnerClient.senderSplitStep1(encodedSenderOwnerState);
         if (Utils.hasWedprError(splitResultSenderSplitStep1)) {
             throw new WedprException(splitResultSenderSplitStep1.wedprErrorMessage);
         }
@@ -216,8 +208,8 @@ public class PerfHiddenAssetUtils {
         String encodedReceiverOwnerState = Utils.protoToEncodedString(receiverOwnerState);
         String encodedTransactionInfo = Utils.protoToEncodedString(transactionInfo);
 
-        SplitResult splitResultReceiverSplitStepFinal =
-                ownerClient.receiverSplitStepFinal(
+        OwnerResult splitResultReceiverSplitStepFinal =
+                OwnerClient.receiverSplitStepFinal(
                         encodedReceiverOwnerState,
                         encodedTransactionInfo,
                         splitResultSenderSplitStep1.splitArgument);
@@ -229,8 +221,8 @@ public class PerfHiddenAssetUtils {
                         Utils.stringToBytes(splitResultReceiverSplitStepFinal.creditCredential));
 
         // 3 sender split step final
-        SplitResult splitResultSenderSplitStepFinal =
-                ownerClient.senderSplitStepFinal(
+        OwnerResult splitResultSenderSplitStepFinal =
+                OwnerClient.senderSplitStepFinal(
                         encodedSenderOwnerState,
                         encodedTransactionInfo,
                         splitResultReceiverSplitStepFinal.splitArgument);

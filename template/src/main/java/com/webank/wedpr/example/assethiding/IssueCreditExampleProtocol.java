@@ -1,7 +1,7 @@
 package com.webank.wedpr.example.assethiding;
 
-import com.webank.wedpr.assethiding.IssueResult;
 import com.webank.wedpr.assethiding.OwnerClient;
+import com.webank.wedpr.assethiding.OwnerResult;
 import com.webank.wedpr.assethiding.RedeemerClient;
 import com.webank.wedpr.assethiding.RedeemerResult;
 import com.webank.wedpr.assethiding.proto.CreditCredential;
@@ -28,9 +28,9 @@ public class IssueCreditExampleProtocol {
         // 1 issue credit
         // 1.1 owner: issue credit
         String secretKey = Utils.getSecretKey(masterSecret).getSecretKey();
-        IssueResult issueResult = OwnerClient.issueCredit(secretKey);
-        if (Utils.hasWedprError(issueResult)) {
-            throw new WedprException(issueResult.wedprErrorMessage);
+        OwnerResult ownerResult = OwnerClient.issueCredit(secretKey);
+        if (Utils.hasWedprError(ownerResult)) {
+            throw new WedprException(ownerResult.wedprErrorMessage);
         }
         System.out.println("Owner send issue credit request successful!");
 
@@ -39,11 +39,11 @@ public class IssueCreditExampleProtocol {
         if (transferType == TransferType.Numberic) {
             redeemerResult =
                     RedeemerClient.confirmNumericalCredit(
-                            redeemerKeyPair, issueResult, creditValue);
+                            redeemerKeyPair, ownerResult, creditValue);
         } else {
             redeemerResult =
                     RedeemerClient.confirmNonnumericalCredit(
-                            redeemerKeyPair, issueResult, creditValue);
+                            redeemerKeyPair, ownerResult, creditValue);
         }
 
         if (Utils.hasWedprError(redeemerResult)) {
@@ -66,7 +66,7 @@ public class IssueCreditExampleProtocol {
         String regulationSpentCredit =
                 Utils.protoToEncodedString(creditCredential.getCreditStorage().getRootCredit());
         IssueArgument issueArgument =
-                IssueArgument.parseFrom(Utils.stringToBytes(issueResult.issueArgument));
+                IssueArgument.parseFrom(Utils.stringToBytes(ownerResult.issueArgument));
         String regulationRG = issueArgument.getRG();
         byte[] regulationInfo =
                 RegulationInfo.newBuilder()

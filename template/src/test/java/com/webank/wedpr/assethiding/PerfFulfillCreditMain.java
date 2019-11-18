@@ -17,14 +17,13 @@ public class PerfFulfillCreditMain {
     public static void main(String[] args) throws Exception {
         // Gets a creditCredential and redeemer execute fulfill credit.
         IssueCreditParams issueCreditParams = PerfHiddenAssetUtils.getIssueCreditParams();
-        RedeemerClient redeemerClient = issueCreditParams.redeemerClient;
         EncodedKeyPair redeemerKeyPair = issueCreditParams.redeemerKeyPair;
         HiddenAssetExamplePerf hiddenAssetExamplePerf = issueCreditParams.hiddenAssetExamplePerf;
         String hiddenAssetTableName = issueCreditParams.hiddenAssetTableName;
         CreditCredential creditCredential = issueCreditParams.creditCredential;
 
         RedeemerResult redeemerFulfillResult =
-                redeemerClient.fulfillNumericalCredit(
+                RedeemerClient.fulfillNumericalCredit(
                         redeemerKeyPair, Utils.protoToEncodedString(creditCredential));
 
         // Executes Perf test for verifying fulfill credit on blockchain.
