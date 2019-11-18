@@ -1,7 +1,7 @@
 package com.webank.wedpr.example.assethiding;
 
 import com.webank.wedpr.assethiding.OwnerClient;
-import com.webank.wedpr.assethiding.TransferResult;
+import com.webank.wedpr.assethiding.OwnerResult;
 import com.webank.wedpr.assethiding.proto.CreditCredential;
 import com.webank.wedpr.assethiding.proto.OwnerState;
 import com.webank.wedpr.assethiding.proto.RegulationInfo;
@@ -26,51 +26,51 @@ public class TransferCreditExampleProtocol {
         // 1 receiver transfer step1
         String encodedTransactionInfo = Utils.protoToEncodedString(transactionInfo);
         String encodedReceiverOwnerState = Utils.protoToEncodedString(receiverOwnerState);
-        TransferResult transferResult = null;
+        OwnerResult ownerResult = null;
         if (transferType == TransferType.Numberic) {
-            transferResult =
+            ownerResult =
                     OwnerClient.receiverTransferNumericalStep1(
                             encodedReceiverOwnerState, encodedTransactionInfo);
         } else {
-            transferResult =
+            ownerResult =
                     OwnerClient.receiverTransferNonnumericalStep1(
                             encodedReceiverOwnerState, encodedTransactionInfo);
         }
-        if (Utils.hasWedprError(transferResult)) {
-            throw new WedprException(transferResult.wedprErrorMessage);
+        if (Utils.hasWedprError(ownerResult)) {
+            throw new WedprException(ownerResult.wedprErrorMessage);
         }
 
         // 2 sender transfer step final
         String encodedSenderOwnerState = Utils.protoToEncodedString(senderOwnerState);
-        String encodedTransferArgument = transferResult.transferArgument;
+        String encodedTransferArgument = ownerResult.transferArgument;
         if (transferType == TransferType.Numberic) {
-            transferResult =
+            ownerResult =
                     OwnerClient.senderTransferNumericalFinal(
                             encodedSenderOwnerState,
                             encodedTransactionInfo,
                             encodedTransferArgument);
         } else {
-            transferResult =
+            ownerResult =
                     OwnerClient.senderTransferNonnumericalFinal(
                             encodedSenderOwnerState,
                             encodedTransactionInfo,
                             encodedTransferArgument);
         }
-        if (Utils.hasWedprError(transferResult)) {
-            throw new WedprException(transferResult.wedprErrorMessage);
+        if (Utils.hasWedprError(ownerResult)) {
+            throw new WedprException(ownerResult.wedprErrorMessage);
         }
         // 3 verify transfer credit and remove old credit and save new credit on blockchain
-        storageClient.transferCredit(transferResult.transferRequest);
+        storageClient.transferCredit(ownerResult.transferRequest);
 
         System.out.println("Blockchain verify transfer credit successful!");
 
         // 4 receiver transfer step final
-        String encodedCreditCredential = transferResult.creditCredential;
-        TransferResult receiverTransferResult =
+        String encodedCreditCredential = ownerResult.creditCredential;
+        OwnerResult receiverOwnerResult =
                 OwnerClient.receiverTransferFinal(
                         encodedReceiverOwnerState, encodedCreditCredential);
 
-        String encodeCreditCredentialForReceiver = receiverTransferResult.creditCredential;
+        String encodeCreditCredentialForReceiver = receiverOwnerResult.creditCredential;
         CreditCredential creditCredentialForRecevier =
                 CreditCredential.parseFrom(Utils.stringToBytes(encodeCreditCredentialForReceiver));
 
@@ -85,7 +85,7 @@ public class TransferCreditExampleProtocol {
                                 .getCreditStorage()
                                 .getCurrentCredit());
         TransferArgument transferArgument =
-                TransferArgument.parseFrom(Utils.stringToBytes(transferResult.transferArgument));
+                TransferArgument.parseFrom(Utils.stringToBytes(ownerResult.transferArgument));
         String regulationRG = transferArgument.getRG();
         byte[] regulationInfo =
                 RegulationInfo.newBuilder()

@@ -1,7 +1,7 @@
 package com.webank.wedpr.example.assethiding;
 
 import com.webank.wedpr.assethiding.OwnerClient;
-import com.webank.wedpr.assethiding.SplitResult;
+import com.webank.wedpr.assethiding.OwnerResult;
 import com.webank.wedpr.assethiding.proto.CreditCredential;
 import com.webank.wedpr.assethiding.proto.CreditStorage;
 import com.webank.wedpr.assethiding.proto.OwnerState;
@@ -27,44 +27,44 @@ public class SplitCreditExampleProtocol {
 
         // 1 sender split step1
         String encodedSenderOwnerState = Utils.protoToEncodedString(senderOwnerState);
-        SplitResult splitResultSenderSplitStep1 =
+        OwnerResult ownerResultSenderSplitStep1 =
                 OwnerClient.senderSplitStep1(encodedSenderOwnerState);
-        if (Utils.hasWedprError(splitResultSenderSplitStep1)) {
-            throw new WedprException(splitResultSenderSplitStep1.wedprErrorMessage);
+        if (Utils.hasWedprError(ownerResultSenderSplitStep1)) {
+            throw new WedprException(ownerResultSenderSplitStep1.wedprErrorMessage);
         }
         // 2 receiver split step final
         String encodedReceiverOwnerState = Utils.protoToEncodedString(receiverOwnerState);
         String encodedTransactionInfo = Utils.protoToEncodedString(transactionInfo);
 
-        SplitResult splitResultReceiverSplitStepFinal =
+        OwnerResult ownerResultReceiverSplitStepFinal =
                 OwnerClient.receiverSplitStepFinal(
                         encodedReceiverOwnerState,
                         encodedTransactionInfo,
-                        splitResultSenderSplitStep1.splitArgument);
-        if (Utils.hasWedprError(splitResultReceiverSplitStepFinal)) {
-            throw new WedprException(splitResultReceiverSplitStepFinal.wedprErrorMessage);
+                        ownerResultSenderSplitStep1.splitArgument);
+        if (Utils.hasWedprError(ownerResultReceiverSplitStepFinal)) {
+            throw new WedprException(ownerResultReceiverSplitStepFinal.wedprErrorMessage);
         }
         CreditCredential creditCredentialReceiver =
                 CreditCredential.parseFrom(
-                        Utils.stringToBytes(splitResultReceiverSplitStepFinal.creditCredential));
+                        Utils.stringToBytes(ownerResultReceiverSplitStepFinal.creditCredential));
 
         // 3 sender split step final
-        SplitResult splitResultSenderSplitStepFinal =
+        OwnerResult ownerResultSenderSplitStepFinal =
                 OwnerClient.senderSplitStepFinal(
                         encodedSenderOwnerState,
                         encodedTransactionInfo,
-                        splitResultReceiverSplitStepFinal.splitArgument);
-        if (Utils.hasWedprError(splitResultSenderSplitStepFinal)) {
-            throw new WedprException(splitResultSenderSplitStepFinal.wedprErrorMessage);
+                        ownerResultReceiverSplitStepFinal.splitArgument);
+        if (Utils.hasWedprError(ownerResultSenderSplitStepFinal)) {
+            throw new WedprException(ownerResultSenderSplitStepFinal.wedprErrorMessage);
         }
         CreditCredential creditCredentialSender =
                 CreditCredential.parseFrom(
-                        Utils.stringToBytes(splitResultSenderSplitStepFinal.creditCredential));
+                        Utils.stringToBytes(ownerResultSenderSplitStepFinal.creditCredential));
 
         // assemble creditCredential for receiver
         SplitRequest splitRequest =
                 SplitRequest.parseFrom(
-                        Utils.stringToBytes(splitResultSenderSplitStepFinal.splitRequest));
+                        Utils.stringToBytes(ownerResultSenderSplitStepFinal.splitRequest));
         CreditStorage receiverCreditStorage = splitRequest.getNewCredit(0);
         creditCredentialReceiver =
                 creditCredentialReceiver
@@ -77,7 +77,7 @@ public class SplitCreditExampleProtocol {
         creditCredentialResult.add(creditCredentialReceiver);
 
         // 4 verify split credit and remove old credit and save new credit on blockchain
-        storageClient.splitCredit(splitResultSenderSplitStepFinal.splitRequest);
+        storageClient.splitCredit(ownerResultSenderSplitStepFinal.splitRequest);
         System.out.println("Blockchain verify split credit successful!");
 
         // (Optional) Upload regulation information to blockchain.
@@ -93,7 +93,7 @@ public class SplitCreditExampleProtocol {
                                 .getCurrentCredit());
         SplitArgument splitArgumentSender =
                 SplitArgument.parseFrom(
-                        Utils.stringToBytes(splitResultSenderSplitStep1.splitArgument));
+                        Utils.stringToBytes(ownerResultSenderSplitStep1.splitArgument));
         String regulationRGSender = splitArgumentSender.getSender(0).getRG();
         byte[] regulationInfoSender =
                 RegulationInfo.newBuilder()
@@ -110,7 +110,7 @@ public class SplitCreditExampleProtocol {
                         creditCredentialReceiver.getCreditStorage().getCurrentCredit());
         SplitArgument splitArgumentReceiver =
                 SplitArgument.parseFrom(
-                        Utils.stringToBytes(splitResultReceiverSplitStepFinal.splitArgument));
+                        Utils.stringToBytes(ownerResultReceiverSplitStepFinal.splitArgument));
         String regulationRGReceiver = splitArgumentReceiver.getReceiver(0).getRG();
         byte[] regulationInfoRecevier =
                 RegulationInfo.newBuilder()

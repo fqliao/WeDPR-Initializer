@@ -25,7 +25,6 @@ class VoteRequestParams {
     public String voterTableName;
     public SystemParametersStorage systemParameters;
     public List<String> votingRequestList;
-    public CounterClient counterClient;
     public List<CounterState> counterStateList;
     public List<String> hPointShareList;
     public String counterTableName;
@@ -72,18 +71,17 @@ public class PerfAnonymousVotingUtils {
         List<CounterState> counterStateList = DemoMain.initCounter();
 
         // 2.1 counter make hPointShare and upload hPointShare
-        CounterClient counterClient = new CounterClient();
         List<String> hPointShareList = new ArrayList<>(DemoMain.COUNTER_ID_LIST.size());
         for (int i = 0; i < DemoMain.COUNTER_ID_LIST.size(); i++) {
-            CountResult countResult =
-                    counterClient.makeSystemParametersShare(
+            CounterResult counterResult =
+                    CounterClient.makeSystemParametersShare(
                             Utils.protoToEncodedString(counterStateList.get(i)));
-            if (Utils.hasWedprError(countResult)) {
-                throw new WedprException(countResult.wedprErrorMessage);
+            if (Utils.hasWedprError(counterResult)) {
+                throw new WedprException(counterResult.wedprErrorMessage);
             }
             SystemParametersShareRequest systemParametersShareRequest =
                     SystemParametersShareRequest.parseFrom(
-                            Utils.stringToBytes(countResult.systemParametersShareRequest));
+                            Utils.stringToBytes(counterResult.systemParametersShareRequest));
             String hPointShare = systemParametersShareRequest.getHPointShare();
             TransactionReceipt insertHPointShareReceipt =
                     anonymousVotingExamplePerf
@@ -116,29 +114,27 @@ public class PerfAnonymousVotingUtils {
         List<VoterState> voterStateList = DemoMain.initVoterStateForBoundedVoting(hPoint);
 
         // 4.1 voter register
-        VoterClient voterClient = new VoterClient();
         List<String> registrationRequestList = new ArrayList<>(DemoMain.VOTER_COUNT);
         SystemParametersStorage systemParameters =
                 DemoMain.makeSystemParameters(hPoint, candidates);
         for (int i = 0; i < DemoMain.VOTER_COUNT; i++) {
             VoterState voterState = voterStateList.get(i);
-            VoteResult voteResult =
-                    voterClient.makeBoundedRegistrationRequest(
+            VoterResult voterResult =
+                    VoterClient.makeBoundedRegistrationRequest(
                             Utils.protoToEncodedString(voterState),
                             Utils.protoToEncodedString(systemParameters));
-            registrationRequestList.add(voteResult.registrationRequest);
+            registrationRequestList.add(voterResult.registrationRequest);
         }
 
         // 4.2 coordinator certify
-        CoordinatorClient coordinatorClient = new CoordinatorClient();
         List<String> registrationResponseList = new ArrayList<>(DemoMain.VOTER_COUNT);
         for (int i = 0; i < DemoMain.VOTER_COUNT; i++) {
-            CoordinateResult coordinateResult =
-                    coordinatorClient.certifyBoundedVoter(
+            CoordinatorResult coordinatorResult =
+                    CoordinatorClient.certifyBoundedVoter(
                             Utils.protoToEncodedString(coordinatorState),
                             DemoMain.BLANK_BALLOT_COUNT[i],
                             registrationRequestList.get(i));
-            registrationResponseList.add(coordinateResult.registrationResponse);
+            registrationResponseList.add(coordinatorResult.registrationResponse);
         }
 
         // 5 voter vote
@@ -154,15 +150,15 @@ public class PerfAnonymousVotingUtils {
             VotingChoices votingChoices = votingChoicesBuilder.build();
             VoterState voterState = voterStateList.get(i);
             String registrationResponse = registrationResponseList.get(i);
-            VoteResult voteResult =
-                    voterClient.voteBounded(
+            VoterResult voterResult =
+                    VoterClient.voteBounded(
                             Utils.protoToEncodedString(voterState),
                             Utils.protoToEncodedString(votingChoices),
                             registrationResponse);
-            if (Utils.hasWedprError(voteResult)) {
-                throw new WedprException(voteResult.wedprErrorMessage);
+            if (Utils.hasWedprError(voterResult)) {
+                throw new WedprException(voterResult.wedprErrorMessage);
             }
-            votingRequestList.add(voteResult.voteRequest);
+            votingRequestList.add(voterResult.voteRequest);
         }
 
         VoteRequestParams boundedVoteRequestParams = new VoteRequestParams();
@@ -171,7 +167,6 @@ public class PerfAnonymousVotingUtils {
         boundedVoteRequestParams.voterTableName = voterTableName;
         boundedVoteRequestParams.counterTableName = counterTableName;
         boundedVoteRequestParams.votingRequestList = votingRequestList;
-        boundedVoteRequestParams.counterClient = counterClient;
         boundedVoteRequestParams.counterStateList = counterStateList;
         boundedVoteRequestParams.hPointShareList = hPointShareList;
 
@@ -199,18 +194,17 @@ public class PerfAnonymousVotingUtils {
         List<CounterState> counterStateList = DemoMain.initCounter();
 
         // 2.1 counter make hPointShare and upload hPointShare
-        CounterClient counterClient = new CounterClient();
         List<String> localHPointShareList = new ArrayList<>(DemoMain.COUNTER_ID_LIST.size());
         for (int i = 0; i < DemoMain.COUNTER_ID_LIST.size(); i++) {
-            CountResult countResult =
-                    counterClient.makeSystemParametersShare(
+            CounterResult counterResult =
+                    CounterClient.makeSystemParametersShare(
                             Utils.protoToEncodedString(counterStateList.get(i)));
-            if (Utils.hasWedprError(countResult)) {
-                throw new WedprException(countResult.wedprErrorMessage);
+            if (Utils.hasWedprError(counterResult)) {
+                throw new WedprException(counterResult.wedprErrorMessage);
             }
             SystemParametersShareRequest systemParametersShareRequest =
                     SystemParametersShareRequest.parseFrom(
-                            Utils.stringToBytes(countResult.systemParametersShareRequest));
+                            Utils.stringToBytes(counterResult.systemParametersShareRequest));
             String hPointShare = systemParametersShareRequest.getHPointShare();
             TransactionReceipt insertHPointShareReceipt =
                     anonymousVotingExamplePerf
@@ -243,29 +237,27 @@ public class PerfAnonymousVotingUtils {
         List<VoterState> voterStateList = DemoMain.initVoterStateForUnboundedVoting(hPoint);
 
         // 4.1 voter register
-        VoterClient voterClient = new VoterClient();
         List<String> registrationRequestList = new ArrayList<>(DemoMain.VOTER_COUNT);
         SystemParametersStorage systemParameters =
                 DemoMain.makeSystemParameters(hPoint, candidates);
         for (int i = 0; i < DemoMain.VOTER_COUNT; i++) {
             VoterState voterState = voterStateList.get(i);
-            VoteResult voteResult =
-                    voterClient.makeUnboundedRegistrationRequest(
+            VoterResult voterResult =
+                    VoterClient.makeUnboundedRegistrationRequest(
                             Utils.protoToEncodedString(voterState),
                             Utils.protoToEncodedString(systemParameters));
-            registrationRequestList.add(voteResult.registrationRequest);
+            registrationRequestList.add(voterResult.registrationRequest);
         }
 
         // 4.2 coordinator certify
-        CoordinatorClient coordinatorClient = new CoordinatorClient();
         List<String> registrationResponseList = new ArrayList<>(DemoMain.VOTER_COUNT);
         for (int i = 0; i < DemoMain.VOTER_COUNT; i++) {
-            CoordinateResult coordinateResult =
-                    coordinatorClient.certifyUnboundedVoter(
+            CoordinatorResult coordinatorResult =
+                    CoordinatorClient.certifyUnboundedVoter(
                             Utils.protoToEncodedString(coordinatorState),
                             DemoMain.BLANK_BALLOT_WEIGHT[i],
                             registrationRequestList.get(i));
-            registrationResponseList.add(coordinateResult.registrationResponse);
+            registrationResponseList.add(coordinatorResult.registrationResponse);
         }
 
         // 5 voter vote
@@ -281,15 +273,15 @@ public class PerfAnonymousVotingUtils {
             VotingChoices votingChoices = votingChoicesBuilder.build();
             VoterState voterState = voterStateList.get(i);
             String registrationResponse = registrationResponseList.get(i);
-            VoteResult voteResult =
-                    voterClient.voteUnbounded(
+            VoterResult voterResult =
+                    VoterClient.voteUnbounded(
                             Utils.protoToEncodedString(voterState),
                             Utils.protoToEncodedString(votingChoices),
                             registrationResponse);
-            if (Utils.hasWedprError(voteResult)) {
-                throw new WedprException(voteResult.wedprErrorMessage);
+            if (Utils.hasWedprError(voterResult)) {
+                throw new WedprException(voterResult.wedprErrorMessage);
             }
-            votingRequestList.add(voteResult.voteRequest);
+            votingRequestList.add(voterResult.voteRequest);
         }
 
         VoteRequestParams boundedVoteRequestParams = new VoteRequestParams();
@@ -305,7 +297,6 @@ public class PerfAnonymousVotingUtils {
         VoteRequestParams boundedVoteRequestParams = getVerifyBoundedVoteRequestParams();
         AnonymousVotingExamplePerf anonymousVotingExamplePerf =
                 boundedVoteRequestParams.anonymousVotingExamplePerf;
-        CounterClient counterClient = boundedVoteRequestParams.counterClient;
         List<CounterState> counterStateList = boundedVoteRequestParams.counterStateList;
         List<String> hPointShareList = boundedVoteRequestParams.hPointShareList;
         List<String> votingRequestList = boundedVoteRequestParams.votingRequestList;
@@ -327,14 +318,14 @@ public class PerfAnonymousVotingUtils {
         List<String> decryptedResultPartRequestList =
                 new ArrayList<>(DemoMain.COUNTER_ID_LIST.size());
         for (int i = 0; i < DemoMain.COUNTER_ID_LIST.size(); i++) {
-            CountResult countResult =
-                    counterClient.count(
+            CounterResult counterResult =
+                    CounterClient.count(
                             Utils.protoToEncodedString(counterStateList.get(i)),
                             voteStorageSumTotal);
-            if (Utils.hasWedprError(countResult)) {
-                throw new WedprException(countResult.wedprErrorMessage);
+            if (Utils.hasWedprError(counterResult)) {
+                throw new WedprException(counterResult.wedprErrorMessage);
             }
-            decryptedResultPartRequestList.add(countResult.decryptedResultPartRequest);
+            decryptedResultPartRequestList.add(counterResult.decryptedResultPartRequest);
         }
 
         CountRequestParams countRequestParams = new CountRequestParams();
@@ -352,7 +343,6 @@ public class PerfAnonymousVotingUtils {
         VoteRequestParams boundedVoteRequestParams = getVerifyBoundedVoteRequestParams();
         AnonymousVotingExamplePerf anonymousVotingExamplePerf =
                 boundedVoteRequestParams.anonymousVotingExamplePerf;
-        CounterClient counterClient = boundedVoteRequestParams.counterClient;
         List<CounterState> counterStateList = boundedVoteRequestParams.counterStateList;
         List<String> hPointShareList = boundedVoteRequestParams.hPointShareList;
         List<String> votingRequestList = boundedVoteRequestParams.votingRequestList;
@@ -374,14 +364,14 @@ public class PerfAnonymousVotingUtils {
         List<String> decryptedResultPartRequestList =
                 new ArrayList<>(DemoMain.COUNTER_ID_LIST.size());
         for (int i = 0; i < DemoMain.COUNTER_ID_LIST.size(); i++) {
-            CountResult countResult =
-                    counterClient.count(
+            CounterResult counterResult =
+                    CounterClient.count(
                             Utils.protoToEncodedString(counterStateList.get(i)),
                             voteStorageSumTotal);
-            if (Utils.hasWedprError(countResult)) {
-                throw new WedprException(countResult.wedprErrorMessage);
+            if (Utils.hasWedprError(counterResult)) {
+                throw new WedprException(counterResult.wedprErrorMessage);
             }
-            decryptedResultPartRequestList.add(countResult.decryptedResultPartRequest);
+            decryptedResultPartRequestList.add(counterResult.decryptedResultPartRequest);
         }
         // 6.1 blockchain verify count request
         for (int i = 0; i < DemoMain.COUNTER_ID_LIST.size(); i++) {
@@ -403,14 +393,14 @@ public class PerfAnonymousVotingUtils {
         // counter count ballot
         String decryptedResultPartStorageSumTotal =
                 anonymousVotingExamplePerf.getDecryptedResultPartStorageSumTotal().send();
-        CountResult countResult =
-                counterClient.finalizeVoteResult(
+        CounterResult counterResult =
+                CounterClient.finalizeVoteResult(
                         Utils.protoToEncodedString(systemParameters),
                         voteStorageSumTotal,
                         decryptedResultPartStorageSumTotal,
                         DemoMain.MAX_VOTE_NUMBER);
         VoteResultRequest voteResultRequest =
-                VoteResultRequest.parseFrom(Utils.stringToBytes(countResult.voteResultRequest));
+                VoteResultRequest.parseFrom(Utils.stringToBytes(counterResult.voteResultRequest));
 
         VoteResultParams voteResultParams = new VoteResultParams();
         voteResultParams.anonymousVotingExamplePerf = anonymousVotingExamplePerf;
