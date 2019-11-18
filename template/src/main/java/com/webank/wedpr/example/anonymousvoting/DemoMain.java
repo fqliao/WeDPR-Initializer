@@ -5,14 +5,14 @@ import static org.junit.Assert.assertTrue;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.webank.pkeygen.exception.PkeyGenException;
 import com.webank.wedpr.anonymousvoting.AnonyousvotingUtils;
-import com.webank.wedpr.anonymousvoting.CoordinateResult;
 import com.webank.wedpr.anonymousvoting.CoordinatorClient;
-import com.webank.wedpr.anonymousvoting.CountResult;
+import com.webank.wedpr.anonymousvoting.CoordinatorResult;
 import com.webank.wedpr.anonymousvoting.CounterClient;
+import com.webank.wedpr.anonymousvoting.CounterResult;
 import com.webank.wedpr.anonymousvoting.VerifierClient;
-import com.webank.wedpr.anonymousvoting.VerifyResult;
-import com.webank.wedpr.anonymousvoting.VoteResult;
+import com.webank.wedpr.anonymousvoting.VerifierResult;
 import com.webank.wedpr.anonymousvoting.VoterClient;
+import com.webank.wedpr.anonymousvoting.VoterResult;
 import com.webank.wedpr.anonymousvoting.proto.CoordinatorState;
 import com.webank.wedpr.anonymousvoting.proto.CounterState;
 import com.webank.wedpr.anonymousvoting.proto.RegistrationResponse;
@@ -158,36 +158,36 @@ public class DemoMain {
         SystemParametersStorage systemParameters = makeSystemParameters(hPoint, candidates);
         for (int i = 0; i < VOTER_COUNT; i++) {
             VoterState voterState = voterStateList.get(i);
-            VoteResult voteResult =
+            VoterResult voterResult =
                     VoterClient.makeBoundedRegistrationRequest(
                             Utils.protoToEncodedString(voterState),
                             Utils.protoToEncodedString(systemParameters));
-            registrationRequestList.add(voteResult.registrationRequest);
+            registrationRequestList.add(voterResult.registrationRequest);
         }
 
         // 4.2 coordinator certify
         List<String> registrationResponseList = new ArrayList<>(VOTER_COUNT);
         for (int i = 0; i < VOTER_COUNT; i++) {
-            CoordinateResult coordinateResult =
+            CoordinatorResult coordinatorResult =
                     CoordinatorClient.certifyBoundedVoter(
                             Utils.protoToEncodedString(coordinatorState),
                             BLANK_BALLOT_COUNT[i],
                             registrationRequestList.get(i));
-            registrationResponseList.add(coordinateResult.registrationResponse);
+            registrationResponseList.add(coordinatorResult.registrationResponse);
 
             RegistrationResponse decodedRegistrationResponse =
                     RegistrationResponse.parseFrom(
-                            Utils.stringToBytes(coordinateResult.registrationResponse));
+                            Utils.stringToBytes(coordinatorResult.registrationResponse));
             System.out.println("registrationResponse:" + decodedRegistrationResponse);
         }
 
         // 4.3 verifier verify blank ballot
         for (int i = 0; i < VOTER_COUNT; i++) {
-            VerifyResult verifyResult =
+            VerifierResult verifierResult =
                     VerifierClient.verifyBlankBallot(
                             registrationRequestList.get(i), registrationResponseList.get(i));
-            if (verifyResult.wedprErrorMessage != null) {
-                throw new WedprException(verifyResult.wedprErrorMessage);
+            if (verifierResult.wedprErrorMessage != null) {
+                throw new WedprException(verifierResult.wedprErrorMessage);
             }
         }
         System.out.println("Verify voter blank ballot successful.\n");
@@ -207,15 +207,15 @@ public class DemoMain {
             votingChoicesList.add(votingChoices);
             VoterState voterState = voterStateList.get(i);
             String registrationResponse = registrationResponseList.get(i);
-            VoteResult voteResult =
+            VoterResult voterResult =
                     VoterClient.voteBounded(
                             Utils.protoToEncodedString(voterState),
                             Utils.protoToEncodedString(votingChoices),
                             registrationResponse);
-            if (Utils.hasWedprError(voteResult)) {
-                throw new WedprException(voteResult.wedprErrorMessage);
+            if (Utils.hasWedprError(voterResult)) {
+                throw new WedprException(voterResult.wedprErrorMessage);
             }
-            votingRequestList.add(voteResult.voteRequest);
+            votingRequestList.add(voterResult.voteRequest);
         }
 
         List<RegulationInfo> regulationInfos = getRegulationInfos(votingChoicesList);
@@ -255,14 +255,14 @@ public class DemoMain {
         String voteStorageSumTotal = storageClient.getVoteStorageSumTotal();
         List<String> decryptedResultPartRequestList = new ArrayList<>(COUNTER_ID_LIST.size());
         for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
-            CountResult countResult =
+            CounterResult counterResult =
                     CounterClient.count(
                             Utils.protoToEncodedString(counterStateList.get(i)),
                             voteStorageSumTotal);
-            if (Utils.hasWedprError(countResult)) {
-                throw new WedprException(countResult.wedprErrorMessage);
+            if (Utils.hasWedprError(counterResult)) {
+                throw new WedprException(counterResult.wedprErrorMessage);
             }
-            decryptedResultPartRequestList.add(countResult.decryptedResultPartRequest);
+            decryptedResultPartRequestList.add(counterResult.decryptedResultPartRequest);
         }
 
         // 6.1 blockchain verify count request
@@ -284,14 +284,14 @@ public class DemoMain {
         // 7 counter count ballot
         String decryptedResultPartStorageSumTotal =
                 storageClient.getDecryptedResultPartStorageSumTotal();
-        CountResult countResult =
+        CounterResult counterResult =
                 CounterClient.finalizeVoteResult(
                         Utils.protoToEncodedString(systemParameters),
                         voteStorageSumTotal,
                         decryptedResultPartStorageSumTotal,
                         MAX_VOTE_NUMBER);
         VoteResultRequest voteResultRequest =
-                VoteResultRequest.parseFrom(Utils.stringToBytes(countResult.voteResultRequest));
+                VoteResultRequest.parseFrom(Utils.stringToBytes(counterResult.voteResultRequest));
 
         // 8 verify vote result and save vote result to blockchain
         storageClient.verifyVoteResult(
@@ -359,36 +359,36 @@ public class DemoMain {
         SystemParametersStorage systemParameters = makeSystemParameters(hPoint, candidates);
         for (int i = 0; i < VOTER_COUNT; i++) {
             VoterState voterState = voterStateList.get(i);
-            VoteResult voteResult =
+            VoterResult voterResult =
                     VoterClient.makeUnboundedRegistrationRequest(
                             Utils.protoToEncodedString(voterState),
                             Utils.protoToEncodedString(systemParameters));
-            registrationRequestList.add(voteResult.registrationRequest);
+            registrationRequestList.add(voterResult.registrationRequest);
         }
 
         // 4.2 coordinator certify
         List<String> registrationResponseList = new ArrayList<>(VOTER_COUNT);
         for (int i = 0; i < VOTER_COUNT; i++) {
-            CoordinateResult coordinateResult =
+            CoordinatorResult coordinatorResult =
                     CoordinatorClient.certifyUnboundedVoter(
                             Utils.protoToEncodedString(coordinatorState),
                             BLANK_BALLOT_WEIGHT[i],
                             registrationRequestList.get(i));
-            registrationResponseList.add(coordinateResult.registrationResponse);
+            registrationResponseList.add(coordinatorResult.registrationResponse);
 
             RegistrationResponse decodedRegistrationResponse =
                     RegistrationResponse.parseFrom(
-                            Utils.stringToBytes(coordinateResult.registrationResponse));
+                            Utils.stringToBytes(coordinatorResult.registrationResponse));
             System.out.println("registrationResponse:" + decodedRegistrationResponse);
         }
 
         // 4.3 verifier verify blank ballot
         for (int i = 0; i < VOTER_COUNT; i++) {
-            VerifyResult verifyResult =
+            VerifierResult verifierResult =
                     VerifierClient.verifyBlankBallot(
                             registrationRequestList.get(i), registrationResponseList.get(i));
-            if (verifyResult.wedprErrorMessage != null) {
-                throw new WedprException(verifyResult.wedprErrorMessage);
+            if (verifierResult.wedprErrorMessage != null) {
+                throw new WedprException(verifierResult.wedprErrorMessage);
             }
         }
         System.out.println("Verify voter blank ballot successful.\n");
@@ -408,15 +408,15 @@ public class DemoMain {
             votingChoicesList.add(votingChoices);
             VoterState voterState = voterStateList.get(i);
             String registrationResponse = registrationResponseList.get(i);
-            VoteResult voteResult =
+            VoterResult voterResult =
                     VoterClient.voteUnbounded(
                             Utils.protoToEncodedString(voterState),
                             Utils.protoToEncodedString(votingChoices),
                             registrationResponse);
-            if (Utils.hasWedprError(voteResult)) {
-                throw new WedprException(voteResult.wedprErrorMessage);
+            if (Utils.hasWedprError(voterResult)) {
+                throw new WedprException(voterResult.wedprErrorMessage);
             }
-            votingRequestList.add(voteResult.voteRequest);
+            votingRequestList.add(voterResult.voteRequest);
         }
 
         List<RegulationInfo> regulationInfos = getRegulationInfos(votingChoicesList);
@@ -456,14 +456,14 @@ public class DemoMain {
         String voteStorageSumTotal = storageClient.getVoteStorageSumTotal();
         List<String> decryptedResultPartRequestList = new ArrayList<>(COUNTER_ID_LIST.size());
         for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
-            CountResult countResult =
+            CounterResult counterResult =
                     CounterClient.count(
                             Utils.protoToEncodedString(counterStateList.get(i)),
                             voteStorageSumTotal);
-            if (Utils.hasWedprError(countResult)) {
-                throw new WedprException(countResult.wedprErrorMessage);
+            if (Utils.hasWedprError(counterResult)) {
+                throw new WedprException(counterResult.wedprErrorMessage);
             }
-            decryptedResultPartRequestList.add(countResult.decryptedResultPartRequest);
+            decryptedResultPartRequestList.add(counterResult.decryptedResultPartRequest);
         }
 
         // 6.1 blockchain verify count request
@@ -485,14 +485,14 @@ public class DemoMain {
         // 7 counter count ballot
         String decryptedResultPartStorageSumTotal =
                 storageClient.getDecryptedResultPartStorageSumTotal();
-        CountResult countResult =
+        CounterResult counterResult =
                 CounterClient.finalizeVoteResult(
                         Utils.protoToEncodedString(systemParameters),
                         voteStorageSumTotal,
                         decryptedResultPartStorageSumTotal,
                         MAX_VOTE_NUMBER);
         VoteResultRequest voteResultRequest =
-                VoteResultRequest.parseFrom(Utils.stringToBytes(countResult.voteResultRequest));
+                VoteResultRequest.parseFrom(Utils.stringToBytes(counterResult.voteResultRequest));
 
         // 8 verify vote result and save vote result to blockchain
         storageClient.verifyVoteResult(
@@ -639,15 +639,15 @@ public class DemoMain {
             throws WedprException, InvalidProtocolBufferException, Exception {
         List<String> localHPointShareList = new ArrayList<>(COUNTER_ID_LIST.size());
         for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
-            CountResult countResult =
+            CounterResult counterResult =
                     CounterClient.makeSystemParametersShare(
                             Utils.protoToEncodedString(counterStateList.get(i)));
-            if (Utils.hasWedprError(countResult)) {
-                throw new WedprException(countResult.wedprErrorMessage);
+            if (Utils.hasWedprError(counterResult)) {
+                throw new WedprException(counterResult.wedprErrorMessage);
             }
             SystemParametersShareRequest systemParametersShareRequest =
                     SystemParametersShareRequest.parseFrom(
-                            Utils.stringToBytes(countResult.systemParametersShareRequest));
+                            Utils.stringToBytes(counterResult.systemParametersShareRequest));
             String hPointShare = systemParametersShareRequest.getHPointShare();
             storageExampleClient.insertHPointShare(COUNTER_ID_LIST.get(i), hPointShare);
             localHPointShareList.add(hPointShare);
