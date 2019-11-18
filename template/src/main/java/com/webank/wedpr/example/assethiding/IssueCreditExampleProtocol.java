@@ -19,18 +19,16 @@ public class IssueCreditExampleProtocol {
 
     public static CreditCredential issueCredit(
             TransferType transferType,
-            RedeemerClient redeemerClient,
             EncodedKeyPair redeemerKeyPair,
             CreditValue creditValue,
             StorageExampleClient storageClient,
-            OwnerClient ownerClient,
             byte[] masterSecret,
             byte[] regulatorPublicKey)
             throws Exception {
         // 1 issue credit
         // 1.1 owner: issue credit
         String secretKey = Utils.getSecretKey(masterSecret).getSecretKey();
-        IssueResult issueResult = ownerClient.issueCredit(secretKey);
+        IssueResult issueResult = OwnerClient.issueCredit(secretKey);
         if (Utils.hasWedprError(issueResult)) {
             throw new WedprException(issueResult.wedprErrorMessage);
         }
@@ -40,11 +38,11 @@ public class IssueCreditExampleProtocol {
         RedeemerResult redeemerResult = null;
         if (transferType == TransferType.Numberic) {
             redeemerResult =
-                    redeemerClient.confirmNumericalCredit(
+                    RedeemerClient.confirmNumericalCredit(
                             redeemerKeyPair, issueResult, creditValue);
         } else {
             redeemerResult =
-                    redeemerClient.confirmNonnumericalCredit(
+                    RedeemerClient.confirmNonnumericalCredit(
                             redeemerKeyPair, issueResult, creditValue);
         }
 
@@ -60,7 +58,7 @@ public class IssueCreditExampleProtocol {
 
         // Owner assemble the issued CreditCredential
         CreditCredential creditCredential =
-                ownerClient.makeCreditCredential(redeemerResult, secretKey);
+                OwnerClient.makeCreditCredential(redeemerResult, secretKey);
 
         // (Optional) Upload regulation information to blockchain.
         String regulationCurrentCredit =

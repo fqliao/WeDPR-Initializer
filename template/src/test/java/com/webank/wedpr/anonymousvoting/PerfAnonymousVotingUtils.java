@@ -56,7 +56,7 @@ public class PerfAnonymousVotingUtils {
         // 1 Deploy contract AnonymousVotingExamplePerf.
         ECKeyPair ecKeyPair = Utils.getEcKeyPair();
         int groupID = 1;
-        Web3j web3j = Utils.getWeb3j(groupID);
+        Web3j web3j = DemoMain.getWeb3j(groupID);
         AnonymousVotingExamplePerf anonymousVotingExamplePerf =
                 AnonymousVotingExamplePerf.deploy(
                                 web3j,
@@ -183,7 +183,7 @@ public class PerfAnonymousVotingUtils {
         // 1 Deploy contract AnonymousVotingExamplePerf.
         ECKeyPair ecKeyPair = Utils.getEcKeyPair();
         int groupID = 1;
-        Web3j web3j = Utils.getWeb3j(groupID);
+        Web3j web3j = DemoMain.getWeb3j(groupID);
         AnonymousVotingExamplePerf anonymousVotingExamplePerf =
                 AnonymousVotingExamplePerf.deploy(
                                 web3j,

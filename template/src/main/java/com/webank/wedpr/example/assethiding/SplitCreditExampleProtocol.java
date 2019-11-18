@@ -18,7 +18,6 @@ import java.util.List;
 
 public class SplitCreditExampleProtocol {
     public static List<CreditCredential> splitCredit(
-            OwnerClient ownerClient,
             OwnerState senderOwnerState,
             OwnerState receiverOwnerState,
             TransactionInfo transactionInfo,
@@ -29,7 +28,7 @@ public class SplitCreditExampleProtocol {
         // 1 sender split step1
         String encodedSenderOwnerState = Utils.protoToEncodedString(senderOwnerState);
         SplitResult splitResultSenderSplitStep1 =
-                ownerClient.senderSplitStep1(encodedSenderOwnerState);
+                OwnerClient.senderSplitStep1(encodedSenderOwnerState);
         if (Utils.hasWedprError(splitResultSenderSplitStep1)) {
             throw new WedprException(splitResultSenderSplitStep1.wedprErrorMessage);
         }
@@ -38,7 +37,7 @@ public class SplitCreditExampleProtocol {
         String encodedTransactionInfo = Utils.protoToEncodedString(transactionInfo);
 
         SplitResult splitResultReceiverSplitStepFinal =
-                ownerClient.receiverSplitStepFinal(
+                OwnerClient.receiverSplitStepFinal(
                         encodedReceiverOwnerState,
                         encodedTransactionInfo,
                         splitResultSenderSplitStep1.splitArgument);
@@ -51,7 +50,7 @@ public class SplitCreditExampleProtocol {
 
         // 3 sender split step final
         SplitResult splitResultSenderSplitStepFinal =
-                ownerClient.senderSplitStepFinal(
+                OwnerClient.senderSplitStepFinal(
                         encodedSenderOwnerState,
                         encodedTransactionInfo,
                         splitResultReceiverSplitStepFinal.splitArgument);

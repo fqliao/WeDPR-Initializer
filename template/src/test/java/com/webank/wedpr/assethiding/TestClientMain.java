@@ -50,18 +50,14 @@ class UserWallet {
 public class TestClientMain {
 
     public static void main(String[] args) throws Exception {
-        OwnerClient ownerClient = new OwnerClient();
-        RedeemerClient redeemerClient = new RedeemerClient();
-        EncodedKeyPair redeemerKeyPair = Utils.getEncodedKeyPair();
-
-        StorageExampleClient storageClient = DemoMain.initBlockchain();
-
         System.out.println("Welcome to test hidden asset!");
         CommandUtils.help();
         System.out.println("hiddenAssetTableName:" + DemoMain.hiddenAssetTableName);
         System.out.println("regulationInfoTableName:" + DemoMain.regulationInfoTableName);
         System.out.println();
 
+        StorageExampleClient storageClient = DemoMain.initBlockchain();
+        EncodedKeyPair redeemerKeyPair = Utils.getEncodedKeyPair();
         ECKeyPair regulatorKeyPair = Utils.getEcKeyPair();
         byte[] regulatorSecretKey = regulatorKeyPair.getPrivateKey().toByteArray();
         byte[] regulatorPublicKey = regulatorKeyPair.getPublicKey().toByteArray();
@@ -114,11 +110,9 @@ public class TestClientMain {
                         CreditCredential creditCredential =
                                 IssueCreditExampleProtocol.issueCredit(
                                         TransferType.NonNumberic,
-                                        redeemerClient,
                                         redeemerKeyPair,
                                         creditValue,
                                         storageClient,
-                                        ownerClient,
                                         masterSecret,
                                         regulatorPublicKey);
 
@@ -169,11 +163,9 @@ public class TestClientMain {
                         CreditCredential creditCredential =
                                 IssueCreditExampleProtocol.issueCredit(
                                         TransferType.Numberic,
-                                        redeemerClient,
                                         redeemerKeyPair,
                                         creditValue,
                                         storageClient,
-                                        ownerClient,
                                         masterSecret,
                                         regulatorPublicKey);
 
@@ -248,7 +240,6 @@ public class TestClientMain {
                         }
                         FulfillCreditExampleProtocol.fulfillCredit(
                                 TransferType.NonNumberic,
-                                redeemerClient,
                                 redeemerKeyPair,
                                 fulfillCreditCredentials,
                                 storageClient);
@@ -307,7 +298,6 @@ public class TestClientMain {
                         }
                         FulfillCreditExampleProtocol.fulfillCredit(
                                 TransferType.Numberic,
-                                redeemerClient,
                                 redeemerKeyPair,
                                 fulfillCreditCredentials,
                                 storageClient);
@@ -405,7 +395,6 @@ public class TestClientMain {
                         CreditCredential receiverCreditCredential =
                                 TransferCreditExampleProtocol.transferCredit(
                                         TransferType.NonNumberic,
-                                        ownerClient,
                                         senderOwnerState,
                                         receiverOwnerState,
                                         transactionInfo,
@@ -503,7 +492,6 @@ public class TestClientMain {
                         CreditCredential receiverCreditCredential =
                                 TransferCreditExampleProtocol.transferCredit(
                                         TransferType.Numberic,
-                                        ownerClient,
                                         senderOwnerState,
                                         receiverOwnerState,
                                         transactionInfo,
@@ -639,7 +627,6 @@ public class TestClientMain {
                     // execute split
                     List<CreditCredential> creditCredentialResult =
                             SplitCreditExampleProtocol.splitCredit(
-                                    ownerClient,
                                     senderOwnerState,
                                     receiverOwnerState,
                                     transactionInfo,

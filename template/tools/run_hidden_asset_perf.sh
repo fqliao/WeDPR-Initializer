@@ -49,6 +49,7 @@ Usage:
     -i <run issue credit perf test>                     Default no.
     -f <run fulfill credit perf test>                   Default no.
     -t <run transfer credit perf test>                  Default no.
+    -s <run split credit perf test>                     Default no.
     -c <transaction count>                              [Required] Set transaction count.
     -q <transaction qps>                                [Required] Set transaction qps.
     -h Help
