@@ -200,10 +200,7 @@ public class TestClientMain {
                         votingBallots[j] = votingBallot;
                     }
                     if (votingType == 1) {
-                        int sumVotingBallots = 0;
-                        for (int v : votingBallots) {
-                            sumVotingBallots = sumVotingBallots + v;
-                        }
+                        int sumVotingBallots = Arrays.stream(votingBallots).sum();
                         if (sumVotingBallots > blankBallots[i]) {
                             System.out.println(
                                     "Error: voting ballot sum "
@@ -260,11 +257,7 @@ public class TestClientMain {
                                     + ".\n");
                     continue;
                 }
-                Arrays.sort(blankBallots);
-                int sumBlankBallots = 0;
-                for (int v : blankBallots) {
-                    sumBlankBallots = sumBlankBallots + v;
-                }
+                int sumBlankBallots = Arrays.stream(blankBallots).sum();
                 if (maxVoteNumber <= sumBlankBallots) {
                     System.out.println(
                             "Error: please provide max vote number greater than the max blank ballots count "

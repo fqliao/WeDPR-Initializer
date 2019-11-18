@@ -54,7 +54,7 @@ public class PerfHiddenAssetUtils {
         // 1 Deploy contract HiddenAssetExamplePerf.
         ECKeyPair ecKeyPair = Utils.getEcKeyPair();
         int groupID = 1;
-        Web3j web3j = Utils.getWeb3j(groupID);
+        Web3j web3j = DemoMain.getWeb3j(groupID);
         HiddenAssetExamplePerf hiddenAssetExamplePerf =
                 HiddenAssetExamplePerf.deploy(
                                 web3j,

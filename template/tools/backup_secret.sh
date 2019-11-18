@@ -63,7 +63,7 @@ function run(){
   output_dir=$(abspath ${output_dir})
   dirpath="$(cd "$(dirname "$0")" && pwd)"
   cd $dirpath
-	java -cp "../apps/*:../conf/:../lib/*" com.webank.wedpr.tool.KeyManager ${input_file} ${n} ${t} ${output_dir} "backup_secret"
+  java -cp "../apps/*:../conf/:../lib/*" com.webank.wedpr.tool.KeyManager ${input_file} ${n} ${t} ${output_dir} "backup_secret"
 }
 
 function parse_params() {

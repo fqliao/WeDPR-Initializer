@@ -2,8 +2,6 @@ package com.webank.wedpr.example.assethiding;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.webank.wedpr.assethiding.AssethidingUtils;
-import com.webank.wedpr.assethiding.OwnerClient;
-import com.webank.wedpr.assethiding.RedeemerClient;
 import com.webank.wedpr.assethiding.proto.CreditCredential;
 import com.webank.wedpr.assethiding.proto.CreditValue;
 import com.webank.wedpr.assethiding.proto.OwnerState;
@@ -18,8 +16,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import org.fisco.bcos.channel.client.Service;
 import org.fisco.bcos.web3j.crypto.ECKeyPair;
+import org.fisco.bcos.web3j.protocol.Web3j;
+import org.fisco.bcos.web3j.protocol.channel.ChannelEthereumService;
 import org.fisco.bcos.web3j.tuples.generated.Tuple3;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class DemoMain {
 
@@ -90,7 +92,6 @@ public class DemoMain {
         byte[] masterSecret = Utils.decryptSecret(encryptedSecret, "example123");
 
         // redeemer init parameters
-        RedeemerClient redeemerClient = new RedeemerClient();
         EncodedKeyPair redeemerKeyPair = Utils.getEncodedKeyPair();
 
         // Blockchain init parameters.
@@ -99,15 +100,12 @@ public class DemoMain {
         System.out.println("regulationInfoTableName:" + DemoMain.regulationInfoTableName);
 
         // Get CreditCredential by running issueCredit example program.
-        OwnerClient ownerClient = new OwnerClient();
         CreditCredential creditCredential =
                 IssueCreditExampleProtocol.issueCredit(
                         transferType,
-                        redeemerClient,
                         redeemerKeyPair,
                         creditValue,
                         storageClient,
-                        ownerClient,
                         masterSecret,
                         regulatorPublicKey);
 
@@ -134,7 +132,6 @@ public class DemoMain {
         CreditCredential receiverCreditCredential =
                 TransferCreditExampleProtocol.transferCredit(
                         transferType,
-                        ownerClient,
                         senderOwnerState,
                         receiverOwnerState,
                         transactionInfo,
@@ -158,11 +155,7 @@ public class DemoMain {
 
         /// 3 fulfill credit
         FulfillCreditExampleProtocol.fulfillCredit(
-                transferType,
-                redeemerClient,
-                redeemerKeyPair,
-                receiverCreditCredential,
-                storageClient);
+                transferType, redeemerKeyPair, receiverCreditCredential, storageClient);
     }
 
     public static void splitNumbericAsset() throws Exception {
@@ -176,7 +169,6 @@ public class DemoMain {
         byte[] masterSecret = Utils.decryptSecret(encryptedSecret, "example123");
 
         // redeemer init parameters
-        RedeemerClient redeemerClient = new RedeemerClient();
         EncodedKeyPair redeemerKeyPair = Utils.getEncodedKeyPair();
         // redeemer set value
         int value = 100;
@@ -189,15 +181,12 @@ public class DemoMain {
         System.out.println("regulationInfoTableName:" + DemoMain.regulationInfoTableName);
 
         // get CreditCredential by running issueCredit example program
-        OwnerClient ownerClient = new OwnerClient();
         CreditCredential creditCredential =
                 IssueCreditExampleProtocol.issueCredit(
                         TransferType.Numberic,
-                        redeemerClient,
                         redeemerKeyPair,
                         creditValue,
                         storageClient,
-                        ownerClient,
                         masterSecret,
                         regulatorPublicKey);
         printIssueCreditInfo(storageClient, publicKeyCrypto, regulatorSecretKey, creditCredential);
@@ -222,7 +211,6 @@ public class DemoMain {
         // get creditCredential result by running split example program
         List<CreditCredential> creditCredentialResult =
                 SplitCreditExampleProtocol.splitCredit(
-                        ownerClient,
                         senderOwnerState,
                         receiverOwnerState,
                         transactionInfo,
@@ -262,31 +250,24 @@ public class DemoMain {
 
         /// 3 fulfill credit
         FulfillCreditExampleProtocol.fulfillCredit(
-                TransferType.Numberic,
-                redeemerClient,
-                redeemerKeyPair,
-                senderCreditCredential,
-                storageClient);
+                TransferType.Numberic, redeemerKeyPair, senderCreditCredential, storageClient);
         FulfillCreditExampleProtocol.fulfillCredit(
-                TransferType.Numberic,
-                redeemerClient,
-                redeemerKeyPair,
-                receiverCreditCredential,
-                storageClient);
+                TransferType.Numberic, redeemerKeyPair, receiverCreditCredential, storageClient);
     }
 
     public static StorageExampleClient initBlockchain() throws Exception {
         // Generate ECKeyPair to send transactions to blockchain.
         ECKeyPair ecKeyPair = Utils.getEcKeyPair();
         int groupID = 1;
+        Web3j web3j = getWeb3j(groupID);
         // For demo purpose, we call deployContract first, then call loadContract to load the
         // deployed contract.
         // If your contract has been deployed, you only need to call loadContract. Otherwise, you
         // only need to call deployContract.
-        HiddenAssetExample hiddenAssetExample = AssethidingUtils.deployContract(ecKeyPair, groupID);
+        HiddenAssetExample hiddenAssetExample = AssethidingUtils.deployContract(web3j, ecKeyPair);
         hiddenAssetExample =
                 AssethidingUtils.loadContract(
-                        hiddenAssetExample.getContractAddress(), ecKeyPair, groupID);
+                        web3j, hiddenAssetExample.getContractAddress(), ecKeyPair);
         StorageExampleClient storageClient =
                 new StorageExampleClient(
                         hiddenAssetExample, hiddenAssetTableName, regulationInfoTableName);
@@ -294,6 +275,24 @@ public class DemoMain {
         storageClient.init();
 
         return storageClient;
+    }
+
+    public static Web3j getWeb3j(int groupID) throws Exception {
+        ClassPathXmlApplicationContext context = null;
+        try {
+            context = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
+            Service service = context.getBean(Service.class);
+            service.setGroupId(groupID);
+            service.run();
+
+            ChannelEthereumService channelEthereumService = new ChannelEthereumService();
+            channelEthereumService.setChannelService(service);
+            return Web3j.build(channelEthereumService, groupID);
+        } catch (Exception e) {
+            throw new WedprException(e);
+        } finally {
+            context.close();
+        }
     }
 
     public static void printIssueCreditInfo(

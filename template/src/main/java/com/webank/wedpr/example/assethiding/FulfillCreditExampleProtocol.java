@@ -13,7 +13,6 @@ public class FulfillCreditExampleProtocol {
 
     public static void fulfillCredit(
             TransferType transferType,
-            RedeemerClient redeemerClient,
             EncodedKeyPair redeemerKeyPair,
             CreditCredential creditCredential,
             StorageExampleClient storageClient)
@@ -21,11 +20,11 @@ public class FulfillCreditExampleProtocol {
         RedeemerResult redeemerFulfillResult = null;
         if (transferType == TransferType.Numberic) {
             redeemerFulfillResult =
-                    redeemerClient.fulfillNumericalCredit(
+                    RedeemerClient.fulfillNumericalCredit(
                             redeemerKeyPair, Utils.protoToEncodedString(creditCredential));
         } else {
             redeemerFulfillResult =
-                    redeemerClient.fulfillNonnumericalCredit(
+                    RedeemerClient.fulfillNonnumericalCredit(
                             redeemerKeyPair, Utils.protoToEncodedString(creditCredential));
         }
         if (Utils.hasWedprError(redeemerFulfillResult)) {

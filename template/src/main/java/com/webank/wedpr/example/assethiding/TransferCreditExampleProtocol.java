@@ -17,7 +17,6 @@ public class TransferCreditExampleProtocol {
 
     public static CreditCredential transferCredit(
             TransferType transferType,
-            OwnerClient ownerClient,
             OwnerState senderOwnerState,
             OwnerState receiverOwnerState,
             TransactionInfo transactionInfo,
@@ -30,11 +29,11 @@ public class TransferCreditExampleProtocol {
         TransferResult transferResult = null;
         if (transferType == TransferType.Numberic) {
             transferResult =
-                    ownerClient.receiverTransferNumericalStep1(
+                    OwnerClient.receiverTransferNumericalStep1(
                             encodedReceiverOwnerState, encodedTransactionInfo);
         } else {
             transferResult =
-                    ownerClient.receiverTransferNonnumericalStep1(
+                    OwnerClient.receiverTransferNonnumericalStep1(
                             encodedReceiverOwnerState, encodedTransactionInfo);
         }
         if (Utils.hasWedprError(transferResult)) {
@@ -46,13 +45,13 @@ public class TransferCreditExampleProtocol {
         String encodedTransferArgument = transferResult.transferArgument;
         if (transferType == TransferType.Numberic) {
             transferResult =
-                    ownerClient.senderTransferNumericalFinal(
+                    OwnerClient.senderTransferNumericalFinal(
                             encodedSenderOwnerState,
                             encodedTransactionInfo,
                             encodedTransferArgument);
         } else {
             transferResult =
-                    ownerClient.senderTransferNonnumericalFinal(
+                    OwnerClient.senderTransferNonnumericalFinal(
                             encodedSenderOwnerState,
                             encodedTransactionInfo,
                             encodedTransferArgument);
@@ -68,7 +67,7 @@ public class TransferCreditExampleProtocol {
         // 4 receiver transfer step final
         String encodedCreditCredential = transferResult.creditCredential;
         TransferResult receiverTransferResult =
-                ownerClient.receiverTransferFinal(
+                OwnerClient.receiverTransferFinal(
                         encodedReceiverOwnerState, encodedCreditCredential);
 
         String encodeCreditCredentialForReceiver = receiverTransferResult.creditCredential;
