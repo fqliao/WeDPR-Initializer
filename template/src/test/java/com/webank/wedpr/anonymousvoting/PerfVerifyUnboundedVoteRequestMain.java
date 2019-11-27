@@ -15,6 +15,8 @@ public class PerfVerifyUnboundedVoteRequestMain {
     public static void main(String[] args) throws Exception {
         VoteRequestParams voteRequestParams =
                 PerfAnonymousVotingUtils.getVerifyUnboundedVoteRequestParams();
+        String votingRequest = voteRequestParams.votingRequestList.get(0);
+        String systemParameters = voteRequestParams.systemParameters;
 
         // Executes Perf test for verifying unbounded vote request on blockchain.
         Integer count = Integer.parseInt(args[0]);
@@ -42,10 +44,9 @@ public class PerfVerifyUnboundedVoteRequestMain {
                             try {
                                 voteRequestParams.anonymousVotingExamplePerf
                                         .verifyUnboundedVoteRequest(
-                                                voteRequestParams.voterTableName,
-                                                Utils.protoToEncodedString(
-                                                        voteRequestParams.systemParameters),
-                                                voteRequestParams.votingRequestList.get(0),
+                                                Utils.getUuid(),
+                                                votingRequest,
+                                                systemParameters,
                                                 callback);
                             } catch (Exception e) {
                                 TransactionReceipt receipt = new TransactionReceipt();

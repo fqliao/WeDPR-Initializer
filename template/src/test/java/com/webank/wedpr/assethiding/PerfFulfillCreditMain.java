@@ -51,7 +51,7 @@ public class PerfFulfillCreditMain {
                             callback.setCollector(collector);
                             try {
                                 hiddenAssetExamplePerf.fulfillCredit(
-                                        hiddenAssetTableName,
+                                        Utils.getUuid(),
                                         redeemerFulfillResult.fulfillArgument,
                                         callback);
                             } catch (Exception e) {

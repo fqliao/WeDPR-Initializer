@@ -12,7 +12,6 @@ import com.webank.wedpr.common.EncodedKeyPair;
 import com.webank.wedpr.common.PublicKeyCrypto;
 import com.webank.wedpr.common.PublicKeyCryptoExample;
 import com.webank.wedpr.common.Utils;
-import com.webank.wedpr.common.WedprException;
 import com.webank.wedpr.example.assethiding.DemoMain.TransferType;
 
 public class IssueCreditExampleProtocol {
@@ -29,9 +28,7 @@ public class IssueCreditExampleProtocol {
         // 1.1 owner: issue credit
         String secretKey = Utils.getSecretKey(masterSecret).getSecretKey();
         OwnerResult ownerResult = OwnerClient.issueCredit(secretKey);
-        if (Utils.hasWedprError(ownerResult)) {
-            throw new WedprException(ownerResult.wedprErrorMessage);
-        }
+        Utils.checkWedprResult(ownerResult);
         System.out.println("Owner send issue credit request successful!");
 
         // 1.2 redeemer: confirm credit
@@ -45,10 +42,7 @@ public class IssueCreditExampleProtocol {
                     RedeemerClient.confirmNonnumericalCredit(
                             redeemerKeyPair, ownerResult, creditValue);
         }
-
-        if (Utils.hasWedprError(redeemerResult)) {
-            throw new WedprException(redeemerResult.wedprErrorMessage);
-        }
+        Utils.checkWedprResult(redeemerResult);
         System.out.println("Redeemer confirm credit successful!");
 
         // 1.3 blockchain: verfiy issue credit

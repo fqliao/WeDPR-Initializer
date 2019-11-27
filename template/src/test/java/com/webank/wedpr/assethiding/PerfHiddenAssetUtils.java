@@ -12,7 +12,6 @@ import com.webank.wedpr.assethiding.proto.TransferArgument;
 import com.webank.wedpr.assethiding.proto.TransferRequest;
 import com.webank.wedpr.common.EncodedKeyPair;
 import com.webank.wedpr.common.Utils;
-import com.webank.wedpr.common.WedprException;
 import com.webank.wedpr.example.assethiding.DemoMain;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -60,15 +59,16 @@ public class PerfHiddenAssetUtils {
                                 new StaticGasProvider(Utils.GASPRICE, Utils.GASLIMIT))
                         .send();
 
+        TransactionReceipt enableParallelTransactionReceipt =
+                hiddenAssetExamplePerf.enableParallel().send();
+        Utils.checkTranactionReceipt(enableParallelTransactionReceipt);
+
         // 2 Init hidde asset table.
-        String hiddenAssetTableName = "example_" + hiddenAssetExamplePerf.getContractAddress();
-        String regulationInfoTable =
-                "regulation_info_" + hiddenAssetExamplePerf.getContractAddress();
+        String hiddenAssetTableName = "hidden_asset";
+        String regulationInfoTable = "regulation_info";
         TransactionReceipt transactionReceipt =
                 hiddenAssetExamplePerf.init(hiddenAssetTableName, regulationInfoTable).send();
-        if (!Utils.isTransactionSucceeded(transactionReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(transactionReceipt));
-        }
+        Utils.checkTranactionReceipt(transactionReceipt);
 
         // 3 Owner issue credit.
         Path path = Paths.get(ClassLoader.getSystemResource(DemoMain.SECRET_PATH).toURI());
@@ -76,9 +76,7 @@ public class PerfHiddenAssetUtils {
         byte[] masterSecret = Utils.decryptSecret(encryptedSecret, "example123");
         String secretKey = Utils.getSecretKey(masterSecret).getSecretKey();
         OwnerResult ownerResult = OwnerClient.issueCredit(secretKey);
-        if (Utils.hasWedprError(ownerResult)) {
-            throw new WedprException(ownerResult.wedprErrorMessage);
-        }
+        Utils.checkWedprResult(ownerResult);
 
         // 4 Redeemer confirm credit.
         EncodedKeyPair redeemerKeyPair = Utils.getEncodedKeyPair();
@@ -86,10 +84,7 @@ public class PerfHiddenAssetUtils {
         CreditValue creditValue = CreditValue.newBuilder().setNumericalValue(value).build();
         RedeemerResult redeemerResult =
                 RedeemerClient.confirmNumericalCredit(redeemerKeyPair, ownerResult, creditValue);
-
-        if (Utils.hasWedprError(redeemerResult)) {
-            throw new WedprException(redeemerResult.wedprErrorMessage);
-        }
+        Utils.checkWedprResult(redeemerResult);
 
         // 5 Clear issue credit secret data.
         IssueArgument issueArgument =
@@ -139,19 +134,14 @@ public class PerfHiddenAssetUtils {
         ownerResult =
                 OwnerClient.receiverTransferNumericalStep1(
                         encodedReceiverOwnerState, encodedTransactionInfo);
-
-        if (Utils.hasWedprError(ownerResult)) {
-            throw new WedprException(ownerResult.wedprErrorMessage);
-        }
+        Utils.checkWedprResult(ownerResult);
         // 2 sender transfer step final
         String encodedSenderOwnerState = Utils.protoToEncodedString(senderOwnerState);
         String encodedTransferArgument = ownerResult.transferArgument;
         ownerResult =
                 OwnerClient.senderTransferNumericalFinal(
                         encodedSenderOwnerState, encodedTransactionInfo, encodedTransferArgument);
-        if (Utils.hasWedprError(ownerResult)) {
-            throw new WedprException(ownerResult.wedprErrorMessage);
-        }
+        Utils.checkWedprResult(ownerResult);
         // 3 verify transfer credit and remove old credit and save new credit on blockchain
         // Clear RG in transferRequest.
         TransferRequest transferRequest =
@@ -201,9 +191,7 @@ public class PerfHiddenAssetUtils {
         String encodedSenderOwnerState = Utils.protoToEncodedString(senderOwnerState);
         OwnerResult splitResultSenderSplitStep1 =
                 OwnerClient.senderSplitStep1(encodedSenderOwnerState);
-        if (Utils.hasWedprError(splitResultSenderSplitStep1)) {
-            throw new WedprException(splitResultSenderSplitStep1.wedprErrorMessage);
-        }
+        Utils.checkWedprResult(splitResultSenderSplitStep1);
         // 2 receiver split step final
         String encodedReceiverOwnerState = Utils.protoToEncodedString(receiverOwnerState);
         String encodedTransactionInfo = Utils.protoToEncodedString(transactionInfo);
@@ -213,9 +201,8 @@ public class PerfHiddenAssetUtils {
                         encodedReceiverOwnerState,
                         encodedTransactionInfo,
                         splitResultSenderSplitStep1.splitArgument);
-        if (Utils.hasWedprError(splitResultReceiverSplitStepFinal)) {
-            throw new WedprException(splitResultReceiverSplitStepFinal.wedprErrorMessage);
-        }
+        Utils.checkWedprResult(splitResultReceiverSplitStepFinal);
+
         CreditCredential creditCredentialReceiver =
                 CreditCredential.parseFrom(
                         Utils.stringToBytes(splitResultReceiverSplitStepFinal.creditCredential));
@@ -226,9 +213,8 @@ public class PerfHiddenAssetUtils {
                         encodedSenderOwnerState,
                         encodedTransactionInfo,
                         splitResultReceiverSplitStepFinal.splitArgument);
-        if (Utils.hasWedprError(splitResultSenderSplitStepFinal)) {
-            throw new WedprException(splitResultSenderSplitStepFinal.wedprErrorMessage);
-        }
+        Utils.checkWedprResult(splitResultSenderSplitStepFinal);
+
         CreditCredential creditCredentialSender =
                 CreditCredential.parseFrom(
                         Utils.stringToBytes(splitResultSenderSplitStepFinal.creditCredential));

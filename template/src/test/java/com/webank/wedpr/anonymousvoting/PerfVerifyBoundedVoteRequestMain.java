@@ -15,6 +15,8 @@ public class PerfVerifyBoundedVoteRequestMain {
     public static void main(String[] args) throws Exception {
         VoteRequestParams boundedVoteRequestParams =
                 PerfAnonymousVotingUtils.getVerifyBoundedVoteRequestParams();
+        String votingRequest = boundedVoteRequestParams.votingRequestList.get(0);
+        String systemParameters = boundedVoteRequestParams.systemParameters;
 
         // Executes Perf test for verifying bounded vote request on blockchain.
         Integer count = Integer.parseInt(args[0]);
@@ -42,10 +44,9 @@ public class PerfVerifyBoundedVoteRequestMain {
                             try {
                                 boundedVoteRequestParams.anonymousVotingExamplePerf
                                         .verifyBoundedVoteRequest(
-                                                boundedVoteRequestParams.voterTableName,
-                                                Utils.protoToEncodedString(
-                                                        boundedVoteRequestParams.systemParameters),
-                                                boundedVoteRequestParams.votingRequestList.get(0),
+                                                Utils.getUuid(),
+                                                votingRequest,
+                                                systemParameters,
                                                 callback);
                             } catch (Exception e) {
                                 TransactionReceipt receipt = new TransactionReceipt();

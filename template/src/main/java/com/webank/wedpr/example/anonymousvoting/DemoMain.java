@@ -52,7 +52,9 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 public class DemoMain {
 
     public static String voterTableName = "voter_";
+    public static String voterAggregateTableName = "voter_aggregate_";
     public static String counterTableName = "counter_";
+    public static String counterAggregateTableName = "counter_aggregate_";
     public static String regulationInfoTableName = "regulation_info_";
 
     public static List<String> CANDIDATE_LIST = Arrays.asList("Kitten", "Doge", "Bunny");
@@ -87,7 +89,7 @@ public class DemoMain {
      */
     public static int[][] VOTING_BALLOT_WEIGHT = {{10, 0, 10}, {0, 20, 20}, {30, 30, 30}};
 
-    public static long MAX_VOTE_NUMBER = 10000;
+    public static long MAX_VOTE_NUMBER = 61;
 
     // NOTICE:The regulator secret key should be saved by regulator.
     // In the example, set the variable just used to decrypt regulation information for users.
@@ -111,7 +113,7 @@ public class DemoMain {
             }
         } else {
             System.out.println(
-                    "Please provide one parameter, such as 'boundedVote' or 'unboundedVote'. ");
+                    "Please provide one parameter, such as 'voteBounded' or 'voteUnbounded'. ");
             System.exit(-1);
         }
         System.exit(0);
@@ -186,9 +188,7 @@ public class DemoMain {
             VerifierResult verifierResult =
                     VerifierClient.verifyBlankBallot(
                             registrationRequestList.get(i), registrationResponseList.get(i));
-            if (verifierResult.wedprErrorMessage != null) {
-                throw new WedprException(verifierResult.wedprErrorMessage);
-            }
+            Utils.checkWedprResult(verifierResult);
         }
         System.out.println("Verify voter blank ballot successful.\n");
 
@@ -212,9 +212,7 @@ public class DemoMain {
                             Utils.protoToEncodedString(voterState),
                             Utils.protoToEncodedString(votingChoices),
                             registrationResponse);
-            if (Utils.hasWedprError(voterResult)) {
-                throw new WedprException(voterResult.wedprErrorMessage);
-            }
+            Utils.checkWedprResult(voterResult);
             votingRequestList.add(voterResult.voteRequest);
         }
 
@@ -222,11 +220,11 @@ public class DemoMain {
 
         // 5.1 blockchain verify vote request
         List<String> blankBallots = new ArrayList<>(VOTER_COUNT);
+        String encodedSystemParameters = Utils.protoToEncodedString(systemParameters);
         for (int i = 0; i < VOTER_COUNT; i++) {
             String voteRequest = votingRequestList.get(i);
             TransactionReceipt verifyVoteRequestReceipt =
-                    storageClient.verifyBoundedVoteRequest(
-                            Utils.protoToEncodedString(systemParameters), voteRequest);
+                    storageClient.verifyBoundedVoteRequest(voteRequest, encodedSystemParameters);
             if (!Utils.isTransactionSucceeded(verifyVoteRequestReceipt)) {
                 throw new WedprException("Blockchain verify vote request" + (i + 1) + " failed!");
             }
@@ -244,6 +242,11 @@ public class DemoMain {
             byte[] regulationInfo = regulationInfos.get(i).toByteArray();
             uploadRegulationInfo(storageClient, regulatorPublicKey, blankBallot, regulationInfo);
         }
+        boolean aggregateVoteStorageResult = true;
+        do {
+            aggregateVoteStorageResult =
+                    storageClient.aggregateVoteStorage(encodedSystemParameters);
+        } while (aggregateVoteStorageResult);
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
@@ -252,16 +255,13 @@ public class DemoMain {
         storageClient.nextContractState();
 
         // 6 counter counting
-        String voteStorageSumTotal = storageClient.getVoteStorageSumTotal();
+        String voteStorageSum = storageClient.getVoteStorageSum();
         List<String> decryptedResultPartRequestList = new ArrayList<>(COUNTER_ID_LIST.size());
         for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
             CounterResult counterResult =
                     CounterClient.count(
-                            Utils.protoToEncodedString(counterStateList.get(i)),
-                            voteStorageSumTotal);
-            if (Utils.hasWedprError(counterResult)) {
-                throw new WedprException(counterResult.wedprErrorMessage);
-            }
+                            Utils.protoToEncodedString(counterStateList.get(i)), voteStorageSum);
+            Utils.checkWedprResult(counterResult);
             decryptedResultPartRequestList.add(counterResult.decryptedResultPartRequest);
         }
 
@@ -269,11 +269,17 @@ public class DemoMain {
         for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
 
             storageClient.verifyCountRequest(
-                    Utils.protoToEncodedString(systemParameters),
-                    voteStorageSumTotal,
                     hPointShareList.get(i),
-                    decryptedResultPartRequestList.get(i));
+                    decryptedResultPartRequestList.get(i),
+                    voteStorageSum,
+                    encodedSystemParameters);
         }
+
+        boolean aggregateDecryptedPartResult = true;
+        do {
+            aggregateDecryptedPartResult =
+                    storageClient.aggregateDecryptedPart(encodedSystemParameters);
+        } while (aggregateDecryptedPartResult);
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
@@ -287,7 +293,7 @@ public class DemoMain {
         CounterResult counterResult =
                 CounterClient.finalizeVoteResult(
                         Utils.protoToEncodedString(systemParameters),
-                        voteStorageSumTotal,
+                        voteStorageSum,
                         decryptedResultPartStorageSumTotal,
                         MAX_VOTE_NUMBER);
         VoteResultRequest voteResultRequest =
@@ -295,10 +301,7 @@ public class DemoMain {
 
         // 8 verify vote result and save vote result to blockchain
         storageClient.verifyVoteResult(
-                Utils.protoToEncodedString(systemParameters),
-                voteStorageSumTotal,
-                decryptedResultPartStorageSumTotal,
-                Utils.protoToEncodedString(voteResultRequest));
+                Utils.protoToEncodedString(voteResultRequest), encodedSystemParameters);
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
@@ -387,9 +390,7 @@ public class DemoMain {
             VerifierResult verifierResult =
                     VerifierClient.verifyBlankBallot(
                             registrationRequestList.get(i), registrationResponseList.get(i));
-            if (verifierResult.wedprErrorMessage != null) {
-                throw new WedprException(verifierResult.wedprErrorMessage);
-            }
+            Utils.checkWedprResult(verifierResult);
         }
         System.out.println("Verify voter blank ballot successful.\n");
 
@@ -413,21 +414,19 @@ public class DemoMain {
                             Utils.protoToEncodedString(voterState),
                             Utils.protoToEncodedString(votingChoices),
                             registrationResponse);
-            if (Utils.hasWedprError(voterResult)) {
-                throw new WedprException(voterResult.wedprErrorMessage);
-            }
+            Utils.checkWedprResult(voterResult);
             votingRequestList.add(voterResult.voteRequest);
         }
 
         List<RegulationInfo> regulationInfos = getRegulationInfos(votingChoicesList);
 
         // 5.1 blockchain verify vote request
+        String encodedSystemParameters = Utils.protoToEncodedString(systemParameters);
         List<String> blankBallots = new ArrayList<>(VOTER_COUNT);
         for (int i = 0; i < VOTER_COUNT; i++) {
             String voteRequest = votingRequestList.get(i);
             TransactionReceipt verifyVoteRequestReceipt =
-                    storageClient.verifyUnboundedVoteRequest(
-                            Utils.protoToEncodedString(systemParameters), voteRequest);
+                    storageClient.verifyUnboundedVoteRequest(voteRequest, encodedSystemParameters);
             if (!Utils.isTransactionSucceeded(verifyVoteRequestReceipt)) {
                 throw new WedprException("Blockchain verify vote request" + (i + 1) + " failed!");
             }
@@ -446,6 +445,12 @@ public class DemoMain {
             uploadRegulationInfo(storageClient, regulatorPublicKey, blankBallot, regulationInfo);
         }
 
+        boolean aggregateVoteStorageResult = true;
+        do {
+            aggregateVoteStorageResult =
+                    storageClient.aggregateVoteStorage(encodedSystemParameters);
+        } while (aggregateVoteStorageResult);
+
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
         // change the contract state.
@@ -453,16 +458,13 @@ public class DemoMain {
         storageClient.nextContractState();
 
         // 6 counter counting
-        String voteStorageSumTotal = storageClient.getVoteStorageSumTotal();
+        String voteStorageSum = storageClient.getVoteStorageSum();
         List<String> decryptedResultPartRequestList = new ArrayList<>(COUNTER_ID_LIST.size());
         for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
             CounterResult counterResult =
                     CounterClient.count(
-                            Utils.protoToEncodedString(counterStateList.get(i)),
-                            voteStorageSumTotal);
-            if (Utils.hasWedprError(counterResult)) {
-                throw new WedprException(counterResult.wedprErrorMessage);
-            }
+                            Utils.protoToEncodedString(counterStateList.get(i)), voteStorageSum);
+            Utils.checkWedprResult(counterResult);
             decryptedResultPartRequestList.add(counterResult.decryptedResultPartRequest);
         }
 
@@ -470,11 +472,17 @@ public class DemoMain {
         for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
 
             storageClient.verifyCountRequest(
-                    Utils.protoToEncodedString(systemParameters),
-                    voteStorageSumTotal,
                     hPointShareList.get(i),
-                    decryptedResultPartRequestList.get(i));
+                    decryptedResultPartRequestList.get(i),
+                    voteStorageSum,
+                    encodedSystemParameters);
         }
+
+        boolean aggregateDecryptedPartResult = true;
+        do {
+            aggregateDecryptedPartResult =
+                    storageClient.aggregateDecryptedPart(encodedSystemParameters);
+        } while (aggregateDecryptedPartResult);
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
@@ -488,7 +496,7 @@ public class DemoMain {
         CounterResult counterResult =
                 CounterClient.finalizeVoteResult(
                         Utils.protoToEncodedString(systemParameters),
-                        voteStorageSumTotal,
+                        voteStorageSum,
                         decryptedResultPartStorageSumTotal,
                         MAX_VOTE_NUMBER);
         VoteResultRequest voteResultRequest =
@@ -496,10 +504,7 @@ public class DemoMain {
 
         // 8 verify vote result and save vote result to blockchain
         storageClient.verifyVoteResult(
-                Utils.protoToEncodedString(systemParameters),
-                voteStorageSumTotal,
-                decryptedResultPartStorageSumTotal,
-                Utils.protoToEncodedString(voteResultRequest));
+                Utils.protoToEncodedString(voteResultRequest), encodedSystemParameters);
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
@@ -642,9 +647,7 @@ public class DemoMain {
             CounterResult counterResult =
                     CounterClient.makeSystemParametersShare(
                             Utils.protoToEncodedString(counterStateList.get(i)));
-            if (Utils.hasWedprError(counterResult)) {
-                throw new WedprException(counterResult.wedprErrorMessage);
-            }
+            Utils.checkWedprResult(counterResult);
             SystemParametersShareRequest systemParametersShareRequest =
                     SystemParametersShareRequest.parseFrom(
                             Utils.stringToBytes(counterResult.systemParametersShareRequest));
@@ -680,6 +683,12 @@ public class DemoMain {
         AnonymousVotingExample anonymousVotingExample =
                 AnonyousvotingUtils.deployContract(web3j, ecKeyPair);
 
+        // Enable parallel
+        TransactionReceipt enableParallelTransactionReceipt =
+                anonymousVotingExample.enableParallel().send();
+        Utils.checkTranactionReceipt(enableParallelTransactionReceipt);
+
+        System.out.println("###address:" + anonymousVotingExample.getContractAddress());
         voterTableName =
                 voterTableName + anonymousVotingExample.getContractAddress().substring(2, 10);
         counterTableName =
@@ -687,16 +696,26 @@ public class DemoMain {
         regulationInfoTableName =
                 regulationInfoTableName
                         + anonymousVotingExample.getContractAddress().substring(2, 10);
+        voterAggregateTableName =
+                voterAggregateTableName
+                        + anonymousVotingExample.getContractAddress().substring(2, 10);
+        counterAggregateTableName =
+                counterAggregateTableName
+                        + anonymousVotingExample.getContractAddress().substring(2, 10);
         System.out.println("voterTableName:" + voterTableName);
         System.out.println("counterTableName:" + counterTableName);
         System.out.println("regulationInfoTableName:" + regulationInfoTableName);
+        System.out.println("voterAggregateTableName:" + voterAggregateTableName);
+        System.out.println("counterAggregateTableName:" + counterAggregateTableName);
 
         StorageExampleClient storageClient =
                 new StorageExampleClient(
                         anonymousVotingExample,
                         voterTableName,
                         counterTableName,
-                        regulationInfoTableName);
+                        regulationInfoTableName,
+                        voterAggregateTableName,
+                        counterAggregateTableName);
 
         storageClient.init();
         return storageClient;

@@ -3,6 +3,7 @@ package com.webank.wedpr.assethiding;
 import com.google.common.util.concurrent.RateLimiter;
 import com.webank.wedpr.common.PerformanceCallback;
 import com.webank.wedpr.common.PerformanceCollector;
+import com.webank.wedpr.common.Utils;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -39,9 +40,7 @@ public class PerfIssueCreditMain {
                             callback.setCollector(collector);
                             try {
                                 issueCreditParams.hiddenAssetExamplePerf.issueCredit(
-                                        issueCreditParams.hiddenAssetTableName,
-                                        issueCreditParams.issueArgument,
-                                        callback);
+                                        Utils.getUuid(), issueCreditParams.issueArgument, callback);
                             } catch (Exception e) {
                                 TransactionReceipt receipt = new TransactionReceipt();
                                 receipt.setStatus("-1");

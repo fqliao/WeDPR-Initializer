@@ -1,8 +1,11 @@
 package com.webank.wedpr.common;
 
+import com.webank.wedpr.assethiding.HiddenAssetExamplePerf;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.fisco.bcos.web3j.tx.txdecode.TransactionDecoder;
+import org.fisco.bcos.web3j.tx.txdecode.TransactionDecoderFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,8 +22,17 @@ public class PerformanceCollector {
 
     public void onMessage(TransactionReceipt receipt, Long cost) {
         try {
+            if (!Utils.isTransactionSucceeded(receipt)) {
+                System.out.println("receipt status:" + receipt.getStatus());
+                TransactionDecoder transactionDecoder =
+                        TransactionDecoderFactory.buildTransactionDecoder(
+                                HiddenAssetExamplePerf.ABI, "");
+                System.out.println(
+                        "output:" + Utils.getReceiptOutputResult(transactionDecoder, receipt));
+                System.out.println("require error:" + Utils.getReceiptOutputError(receipt));
+            }
             if (!receipt.isStatusOK()) {
-                System.out.println("receipt error");
+                //                System.out.println("receipt error");
                 error.addAndGet(1);
             }
             received.incrementAndGet();
