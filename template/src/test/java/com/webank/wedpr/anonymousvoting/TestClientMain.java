@@ -258,7 +258,7 @@ public class TestClientMain {
                     continue;
                 }
                 int sumBlankBallots = Arrays.stream(blankBallots).sum();
-                if (maxVoteNumber <= sumBlankBallots) {
+                if (maxVoteNumber < sumBlankBallots) {
                     System.out.println(
                             "Error: please provide max vote number greater than the max blank ballots count "
                                     + sumBlankBallots

@@ -10,7 +10,6 @@ import com.webank.wedpr.assethiding.proto.TransferArgument;
 import com.webank.wedpr.common.PublicKeyCrypto;
 import com.webank.wedpr.common.PublicKeyCryptoExample;
 import com.webank.wedpr.common.Utils;
-import com.webank.wedpr.common.WedprException;
 import com.webank.wedpr.example.assethiding.DemoMain.TransferType;
 
 public class TransferCreditExampleProtocol {
@@ -36,10 +35,7 @@ public class TransferCreditExampleProtocol {
                     OwnerClient.receiverTransferNonnumericalStep1(
                             encodedReceiverOwnerState, encodedTransactionInfo);
         }
-        if (Utils.hasWedprError(ownerResult)) {
-            throw new WedprException(ownerResult.wedprErrorMessage);
-        }
-
+        Utils.checkWedprResult(ownerResult);
         // 2 sender transfer step final
         String encodedSenderOwnerState = Utils.protoToEncodedString(senderOwnerState);
         String encodedTransferArgument = ownerResult.transferArgument;
@@ -56,9 +52,7 @@ public class TransferCreditExampleProtocol {
                             encodedTransactionInfo,
                             encodedTransferArgument);
         }
-        if (Utils.hasWedprError(ownerResult)) {
-            throw new WedprException(ownerResult.wedprErrorMessage);
-        }
+        Utils.checkWedprResult(ownerResult);
         // 3 verify transfer credit and remove old credit and save new credit on blockchain
         storageClient.transferCredit(ownerResult.transferRequest);
 

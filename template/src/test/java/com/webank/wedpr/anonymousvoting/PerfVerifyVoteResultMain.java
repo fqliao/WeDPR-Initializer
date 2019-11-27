@@ -3,6 +3,7 @@ package com.webank.wedpr.anonymousvoting;
 import com.google.common.util.concurrent.RateLimiter;
 import com.webank.wedpr.common.PerformanceCallback;
 import com.webank.wedpr.common.PerformanceCollector;
+import com.webank.wedpr.common.Utils;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -13,6 +14,8 @@ public class PerfVerifyVoteResultMain {
 
     public static void main(String[] args) throws Exception {
         VoteResultParams voteResultParams = PerfAnonymousVotingUtils.getVerifyVoteResultParams();
+        String voteResultRequest = voteResultParams.voteResultRequest;
+        String systemParameters = voteResultParams.systemParameters;
 
         // Executes Perf test for verifying vote result on blockchain.
         Integer count = Integer.parseInt(args[0]);
@@ -39,10 +42,9 @@ public class PerfVerifyVoteResultMain {
                             callback.setCollector(collector);
                             try {
                                 voteResultParams.anonymousVotingExamplePerf.verifyVoteResult(
-                                        voteResultParams.systemParameters,
-                                        voteResultParams.voteStorageSumTotal,
-                                        voteResultParams.decryptedResultPartStorageSumTotal,
-                                        voteResultParams.voteResultRequest,
+                                        Utils.getUuid(),
+                                        voteResultRequest,
+                                        systemParameters,
                                         callback);
                             } catch (Exception e) {
                                 TransactionReceipt receipt = new TransactionReceipt();

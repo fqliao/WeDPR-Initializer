@@ -12,7 +12,6 @@ import com.webank.wedpr.assethiding.proto.TransactionInfo;
 import com.webank.wedpr.common.PublicKeyCrypto;
 import com.webank.wedpr.common.PublicKeyCryptoExample;
 import com.webank.wedpr.common.Utils;
-import com.webank.wedpr.common.WedprException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,9 +28,7 @@ public class SplitCreditExampleProtocol {
         String encodedSenderOwnerState = Utils.protoToEncodedString(senderOwnerState);
         OwnerResult ownerResultSenderSplitStep1 =
                 OwnerClient.senderSplitStep1(encodedSenderOwnerState);
-        if (Utils.hasWedprError(ownerResultSenderSplitStep1)) {
-            throw new WedprException(ownerResultSenderSplitStep1.wedprErrorMessage);
-        }
+        Utils.checkWedprResult(ownerResultSenderSplitStep1);
         // 2 receiver split step final
         String encodedReceiverOwnerState = Utils.protoToEncodedString(receiverOwnerState);
         String encodedTransactionInfo = Utils.protoToEncodedString(transactionInfo);
@@ -41,9 +38,7 @@ public class SplitCreditExampleProtocol {
                         encodedReceiverOwnerState,
                         encodedTransactionInfo,
                         ownerResultSenderSplitStep1.splitArgument);
-        if (Utils.hasWedprError(ownerResultReceiverSplitStepFinal)) {
-            throw new WedprException(ownerResultReceiverSplitStepFinal.wedprErrorMessage);
-        }
+        Utils.checkWedprResult(ownerResultReceiverSplitStepFinal);
         CreditCredential creditCredentialReceiver =
                 CreditCredential.parseFrom(
                         Utils.stringToBytes(ownerResultReceiverSplitStepFinal.creditCredential));
@@ -54,9 +49,7 @@ public class SplitCreditExampleProtocol {
                         encodedSenderOwnerState,
                         encodedTransactionInfo,
                         ownerResultReceiverSplitStepFinal.splitArgument);
-        if (Utils.hasWedprError(ownerResultSenderSplitStepFinal)) {
-            throw new WedprException(ownerResultSenderSplitStepFinal.wedprErrorMessage);
-        }
+        Utils.checkWedprResult(ownerResultSenderSplitStepFinal);
         CreditCredential creditCredentialSender =
                 CreditCredential.parseFrom(
                         Utils.stringToBytes(ownerResultSenderSplitStepFinal.creditCredential));

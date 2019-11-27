@@ -20,6 +20,7 @@ import org.fisco.bcos.channel.client.Service;
 import org.fisco.bcos.web3j.crypto.ECKeyPair;
 import org.fisco.bcos.web3j.protocol.Web3j;
 import org.fisco.bcos.web3j.protocol.channel.ChannelEthereumService;
+import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.fisco.bcos.web3j.tuples.generated.Tuple3;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -268,6 +269,12 @@ public class DemoMain {
         hiddenAssetExample =
                 AssethidingUtils.loadContract(
                         web3j, hiddenAssetExample.getContractAddress(), ecKeyPair);
+
+        // Enable parallel
+        TransactionReceipt enableParallelTransactionReceipt =
+                hiddenAssetExample.enableParallel().send();
+        Utils.checkTranactionReceipt(enableParallelTransactionReceipt);
+
         StorageExampleClient storageClient =
                 new StorageExampleClient(
                         hiddenAssetExample, hiddenAssetTableName, regulationInfoTableName);

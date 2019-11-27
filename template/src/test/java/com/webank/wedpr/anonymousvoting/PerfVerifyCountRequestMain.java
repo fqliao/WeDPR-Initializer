@@ -3,6 +3,7 @@ package com.webank.wedpr.anonymousvoting;
 import com.google.common.util.concurrent.RateLimiter;
 import com.webank.wedpr.common.PerformanceCallback;
 import com.webank.wedpr.common.PerformanceCollector;
+import com.webank.wedpr.common.Utils;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -13,6 +14,10 @@ public class PerfVerifyCountRequestMain {
 
     public static void main(String[] args) throws Exception {
         CountRequestParams countRequestParams = PerfAnonymousVotingUtils.getCountRequestParams();
+        String voteStorageSum = countRequestParams.voteStorageSum;
+        String hPointShare = countRequestParams.hPointShareList.get(0);
+        String decryptedResultPartRequest = countRequestParams.decryptedResultPartRequest;
+        String systemParameters = countRequestParams.systemParameters;
 
         // Executes Perf test for verifying count request on blockchain.
         Integer count = Integer.parseInt(args[0]);
@@ -39,11 +44,11 @@ public class PerfVerifyCountRequestMain {
                             callback.setCollector(collector);
                             try {
                                 countRequestParams.anonymousVotingExamplePerf.verifyCountRequest(
-                                        countRequestParams.counterTableName,
-                                        countRequestParams.systemParameters,
-                                        countRequestParams.voteStorageSumTotal,
-                                        countRequestParams.hPointShareList.get(0),
-                                        countRequestParams.decryptedResultPartRequest,
+                                        Utils.getUuid(),
+                                        voteStorageSum,
+                                        hPointShare,
+                                        decryptedResultPartRequest,
+                                        systemParameters,
                                         callback);
                             } catch (Exception e) {
                                 TransactionReceipt receipt = new TransactionReceipt();

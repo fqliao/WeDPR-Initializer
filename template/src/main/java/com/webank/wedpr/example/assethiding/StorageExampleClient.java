@@ -6,7 +6,6 @@ import com.webank.wedpr.assethiding.proto.SplitRequest;
 import com.webank.wedpr.assethiding.proto.TransferArgument;
 import com.webank.wedpr.assethiding.proto.TransferRequest;
 import com.webank.wedpr.common.Utils;
-import com.webank.wedpr.common.WedprException;
 import java.util.List;
 import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.fisco.bcos.web3j.tuples.generated.Tuple3;
@@ -36,9 +35,7 @@ public class StorageExampleClient {
     public void init() throws Exception {
         TransactionReceipt transactionReceipt =
                 hiddenAsset.init(hiddenAssetTableName, regulationInfoTableName).send();
-        if (!Utils.isTransactionSucceeded(transactionReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(transactionReceipt));
-        }
+        Utils.checkTranactionReceipt(transactionReceipt);
     }
 
     /**
@@ -49,7 +46,7 @@ public class StorageExampleClient {
      * @throws Exception
      */
     public String queryCredit(String currentCredit) throws Exception {
-        return hiddenAsset.queryCredit(hiddenAssetTableName, currentCredit).send().getValue2();
+        return hiddenAsset.queryCredit(currentCredit).send().getValue2();
     }
 
     /**
@@ -65,10 +62,8 @@ public class StorageExampleClient {
                 Utils.protoToEncodedString(
                         issueArgument.toBuilder().clearCreditValue().clearRG().build());
         TransactionReceipt transactionReceipt =
-                hiddenAsset.issueCredit(hiddenAssetTableName, handledIssueArgument).send();
-        if (!Utils.isTransactionSucceeded(transactionReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(transactionReceipt));
-        }
+                hiddenAsset.issueCredit(handledIssueArgument).send();
+        Utils.checkTranactionReceipt(transactionReceipt);
     }
 
     /**
@@ -78,11 +73,8 @@ public class StorageExampleClient {
      * @throws Exception
      */
     public void fulfillCredit(String fulfillArgumentPb) throws Exception {
-        TransactionReceipt transactionReceipt =
-                hiddenAsset.fulfillCredit(hiddenAssetTableName, fulfillArgumentPb).send();
-        if (!Utils.isTransactionSucceeded(transactionReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(transactionReceipt));
-        }
+        TransactionReceipt transactionReceipt = hiddenAsset.fulfillCredit(fulfillArgumentPb).send();
+        Utils.checkTranactionReceipt(transactionReceipt);
     }
 
     /**
@@ -105,10 +97,8 @@ public class StorageExampleClient {
                                 .setArgument(transferArgument)
                                 .build());
         TransactionReceipt transactionReceipt =
-                hiddenAsset.transferredCredit(hiddenAssetTableName, handledTransferRequest).send();
-        if (!Utils.isTransactionSucceeded(transactionReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(transactionReceipt));
-        }
+                hiddenAsset.transferredCredit(handledTransferRequest).send();
+        Utils.checkTranactionReceipt(transactionReceipt);
     }
 
     /**
@@ -150,11 +140,8 @@ public class StorageExampleClient {
                                 .clearArgument()
                                 .setArgument(splitArgument)
                                 .build());
-        TransactionReceipt transactionReceipt =
-                hiddenAsset.splitCredit(hiddenAssetTableName, handledSplitRequest).send();
-        if (!Utils.isTransactionSucceeded(transactionReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(transactionReceipt));
-        }
+        TransactionReceipt transactionReceipt = hiddenAsset.splitCredit(handledSplitRequest).send();
+        Utils.checkTranactionReceipt(transactionReceipt);
     }
 
     /**
@@ -170,15 +157,9 @@ public class StorageExampleClient {
             throws Exception {
         TransactionReceipt transactionReceipt =
                 hiddenAsset
-                        .insertRegulationInfo(
-                                regulationInfoTableName,
-                                currentCreditPb,
-                                spentCreditPb,
-                                regulationInfoPb)
+                        .insertRegulationInfo(currentCreditPb, spentCreditPb, regulationInfoPb)
                         .send();
-        if (!Utils.isTransactionSucceeded(transactionReceipt)) {
-            throw new WedprException(Utils.getReceiptOutputError(transactionReceipt));
-        }
+        Utils.checkTranactionReceipt(transactionReceipt);
     }
 
     /**
@@ -190,6 +171,6 @@ public class StorageExampleClient {
      */
     public Tuple3<List<String>, List<String>, List<String>> queryRegulationInfo(
             String currentCreditPb) throws Exception {
-        return hiddenAsset.queryRegulationInfo(regulationInfoTableName, currentCreditPb).send();
+        return hiddenAsset.queryRegulationInfo(currentCreditPb).send();
     }
 }
