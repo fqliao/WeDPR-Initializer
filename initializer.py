@@ -212,7 +212,11 @@ if __name__ == "__main__":
 
     anonymous_voting = cfg['resource-generation']['workflow']['anonymous_voting']['enabled']
     hidden_asset = cfg['resource-generation']['workflow']['hidden_asset']['enabled']
+    hidden_asset = cfg['resource-generation']['workflow']['anonymous_auction']['enabled']
+    hidden_asset = cfg['resource-generation']['workflow']['selective_disclosure']['enabled']
     print("anonymous_voting_enable = {}".format(anonymous_voting))
+    print("anonymous_auction = {}".format(anonymous_auction))
+    print("selective_disclosure = {}".format(selective_disclosure))
     print("hidden_asset_enable = {}".format(hidden_asset))
     print("table_name_prefix = {}".format(table_name))
     app_output_path = cfg['resource-generation']['output']['app_output_path']

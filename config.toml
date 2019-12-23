@@ -15,9 +15,14 @@ data_table_name_prefix = "wedpr-demo-table"
     output_language = "java"
     app_output_path = "./WeDPR-Demo"
 
+    [resource-generation.workflow.anonymous_auction]
+    enabled = true
+
     [resource-generation.workflow.anonymous_voting]
     enabled = true
 
     [resource-generation.workflow.hidden_asset]
     enabled = true
     
+    [resource-generation.workflow.selective_disclosure]
+    enabled = true
