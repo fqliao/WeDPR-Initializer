@@ -211,8 +211,8 @@ if __name__ == "__main__":
     table_name = cfg['data']['data_table_name_prefix']
 
     anonymous_voting = cfg['resource-generation']['workflow']['anonymous_voting']['enabled']
-    hidden_asset = cfg['resource-generation']['workflow']['hidden_asset']['enabled']
-    hidden_asset = cfg['resource-generation']['workflow']['anonymous_auction']['enabled']
+    anonymous_auction = cfg['resource-generation']['workflow']['hidden_asset']['enabled']
+    selective_disclosure = cfg['resource-generation']['workflow']['anonymous_auction']['enabled']
     hidden_asset = cfg['resource-generation']['workflow']['selective_disclosure']['enabled']
     print("anonymous_voting_enable = {}".format(anonymous_voting))
     print("anonymous_auction = {}".format(anonymous_auction))
@@ -258,29 +258,22 @@ if __name__ == "__main__":
         print(result)
 
     client_path = "{}/WeDPR-Client".format(app_output_path)
-    if not anonymous_voting:
-        # shutil.rmtree('{}/src/main/java/com/webank/wedpr/anonymousvoting'.format(sdk_name))
+    if anonymous_voting:
+        vote_table_file = '{}/src/main/java/com/webank/wedpr/example/anonymousvoting/DemoMain.java'.format(
+            client_path)
+        file_must_exists(vote_table_file)
+        replace(vote_table_file, '"voter_"',
+                '"{}_voter_"'.format(table_name))
+        replace(vote_table_file, '"counter_"',
+                '"{}_counter_"'.format(table_name))
+        replace(vote_table_file, '"regulation_info_"',
+                '"{}_regulation_info_"'.format(table_name))
+    else:
         shutil.rmtree(
             '{}/src/main/java/com/webank/wedpr/example/anonymousvoting'.format(client_path))
         shutil.rmtree(
             '{}/src/test/java/com/webank/wedpr/anonymousvoting'.format(client_path))
-    else:
-        vote_table_file = '{}/src/main/java/com/webank/wedpr/example/anonymousvoting/DemoMain.java'.format(
-            client_path)
-        file_must_exists(vote_table_file)
-        replace(vote_table_file, 'voter_',
-                '{}_voter_'.format(table_name))
-        replace(vote_table_file, 'counter_',
-                '{}_counter_'.format(table_name))
-        replace(vote_table_file, 'regulation_info_',
-                '{}_regulation_info_'.format(table_name))
-    if not hidden_asset:
-        # shutil.rmtree('{}/src/main/java/com/webank/wedpr/assethiding'.format(sdk_name))
-        shutil.rmtree(
-            '{}/src/main/java/com/webank/wedpr/example/assethiding'.format(client_path))
-        shutil.rmtree(
-            '{}/src/test/java/com/webank/wedpr/assethiding'.format(client_path))
-    else:
+    if hidden_asset:
         asset_table_file = '{}/src/main/java/com/webank/wedpr/example/assethiding/DemoMain.java'.format(
             client_path)
         file_must_exists(asset_table_file)
@@ -288,6 +281,25 @@ if __name__ == "__main__":
                 '{}_hidden_asset'.format(table_name))
         replace(asset_table_file, 'hidden_asset_regulation_info_example',
                 '{}_hidden_asset_regulation_info'.format(table_name))
+    else:
+        shutil.rmtree(
+            '{}/src/main/java/com/webank/wedpr/example/assethiding'.format(client_path))
+        shutil.rmtree(
+            '{}/src/test/java/com/webank/wedpr/assethiding'.format(client_path))
+    if not selective_disclosure:
+        shutil.rmtree(
+            '{}/src/main/java/com/webank/wedpr/example/selectivedisclosure'.format(client_path))
+    if anonymous_auction:
+        anonymous_auction_table_file = '{}/src/main/java/com/webank/wedpr/example/anonymousauction/DemoMain.java'.format(
+            client_path)
+        file_must_exists(anonymous_auction_table_file)
+        replace(anonymous_auction_table_file, 'bidder_',
+                '{}_bidder'.format(table_name))
+        replace(anonymous_auction_table_file, 'regulation_info_',
+                '{}_bidder_regulation_info'.format(table_name))
+    else:
+        shutil.rmtree(
+            '{}/src/main/java/com/webank/wedpr/example/anonymousauction'.format(client_path))
 
     (status, result)\
         = getstatusoutput('bash ./scripts/build_chain.sh -l "127.0.0.1:4" -p 30300,20200,8545 -e {}/fisco-bcos -o {}/nodes'.format(app_output_path, app_output_path))
