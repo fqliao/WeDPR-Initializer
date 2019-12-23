@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package com.webank.wedpr.anonymous_auction.proto;
+option java_package = "com.webank.wedpr.anonymousauction.proto";
+option java_multiple_files = true;
+
+// An example structure describing the data used by regulator.
+message RegulationInfo {
+    int64 bid_value = 1;
+}

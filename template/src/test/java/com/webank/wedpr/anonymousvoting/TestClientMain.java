@@ -272,17 +272,17 @@ public class TestClientMain {
             DemoMain.regulatorPublicKey = ecKeyPair.getPublicKey().toByteArray();
             DemoMain.publicKeyCrypto = new PublicKeyCryptoExample();
 
-            DemoMain.CANDIDATE_LIST = candidates;
-            DemoMain.COUNTER_ID_LIST = counterIds;
-            DemoMain.VOTER_COUNT = voterCount;
-            DemoMain.MAX_VOTE_NUMBER = maxVoteNumber;
+            DemoMain.candidate_list = candidates;
+            DemoMain.counter_id_list = counterIds;
+            DemoMain.voter_count = voterCount;
+            DemoMain.max_vote_number = maxVoteNumber;
             if (votingType == 1) { // vote bounded
-                DemoMain.BLANK_BALLOT_COUNT = blankBallots;
-                DemoMain.VOTING_BALLOT_COUNT = allVotingBallots;
+                DemoMain.blank_ballot_count = blankBallots;
+                DemoMain.voting_ballot_count = allVotingBallots;
                 DemoMain.doVoteBounded();
             } else if (votingType == 2) { // vote unbounded
-                DemoMain.BLANK_BALLOT_WEIGHT = blankBallots;
-                DemoMain.VOTING_BALLOT_WEIGHT = allVotingBallots;
+                DemoMain.blank_ballot_weight = blankBallots;
+                DemoMain.voting_ballot_weight = allVotingBallots;
                 DemoMain.doVoteUnbounded();
             } else {
                 System.out.println(

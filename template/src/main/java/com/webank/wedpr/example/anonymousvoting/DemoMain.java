@@ -57,15 +57,15 @@ public class DemoMain {
     public static String counterAggregateTableName = "counter_aggregate_";
     public static String regulationInfoTableName = "regulation_info_";
 
-    public static List<String> CANDIDATE_LIST = Arrays.asList("Kitten", "Doge", "Bunny");
-    public static List<String> COUNTER_ID_LIST = Arrays.asList("10086", "10010");
+    public static List<String> candidate_list = Arrays.asList("Kitten", "Doge", "Bunny");
+    public static List<String> counter_id_list = Arrays.asList("10086", "10010");
 
-    public static int VOTER_COUNT = 3;
+    public static int voter_count = 3;
     /**
      * Blank ballot count for bounded voting for example. Voter1 to voter3 is allocated 10, 20 and
      * 30 blank ballots respectively.
      */
-    public static int[] BLANK_BALLOT_COUNT = {10, 20, 30};
+    public static int[] blank_ballot_count = {10, 20, 30};
 
     /**
      * Voting ballot for bounded voting for example. Voter1 vote 1, 2, 3 for candidate1 to
@@ -73,13 +73,13 @@ public class DemoMain {
      * Voter3 vote 3, 4, 5 for candidate1 to candidate3 respectively. Candidate1 to candidate3 will
      * get 6, 9 and 12 ballots respectively.
      */
-    public static int[][] VOTING_BALLOT_COUNT = {{1, 2, 3}, {2, 3, 4}, {3, 4, 5}};
+    public static int[][] voting_ballot_count = {{1, 2, 3}, {2, 3, 4}, {3, 4, 5}};
 
     /**
      * Blank ballot count for unbounded voting for example. Voter1 to voter3 is allocated 10, 20 and
      * 30 weight for blank ballot respectively.
      */
-    public static int[] BLANK_BALLOT_WEIGHT = {10, 20, 30};
+    public static int[] blank_ballot_weight = {10, 20, 30};
 
     /**
      * Voting ballot for unbounded voting for example. Voter1 vote 10, 10, 10 for candidate1 to
@@ -87,9 +87,9 @@ public class DemoMain {
      * Voter3 vote 30, 30, 30 for candidate1 to candidate3 respectively. Candidate1 to candidate3
      * will get 40, 40 and 40 ballots respectively.
      */
-    public static int[][] VOTING_BALLOT_WEIGHT = {{10, 0, 10}, {0, 20, 20}, {30, 30, 30}};
+    public static int[][] voting_ballot_weight = {{10, 0, 10}, {0, 20, 20}, {30, 30, 30}};
 
-    public static long MAX_VOTE_NUMBER = 61;
+    public static long max_vote_number = 61;
 
     // NOTICE:The regulator secret key should be saved by regulator.
     // In the example, set the variable just used to decrypt regulation information for users.
@@ -136,7 +136,7 @@ public class DemoMain {
         CoordinatorState coordinatorState = initCoordinator();
 
         // 3.1 save candidates on blockchain
-        storageClient.setCandidates(CANDIDATE_LIST);
+        storageClient.setCandidates(candidate_list);
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
@@ -149,16 +149,16 @@ public class DemoMain {
 
         // 3.3 query candidates from blockchain
         List<String> candidates = storageClient.getCandidates();
-        assertTrue("Query candidates failed.", candidates.equals(CANDIDATE_LIST));
+        assertTrue("Query candidates failed.", candidates.equals(candidate_list));
 
         // 4 voter init ==============================================
         List<VoterState> voterStateList;
         voterStateList = initVoterStateForBoundedVoting(hPoint);
 
         // 4.1 voter register
-        List<String> registrationRequestList = new ArrayList<>(VOTER_COUNT);
+        List<String> registrationRequestList = new ArrayList<>(voter_count);
         SystemParametersStorage systemParameters = makeSystemParameters(hPoint, candidates);
-        for (int i = 0; i < VOTER_COUNT; i++) {
+        for (int i = 0; i < voter_count; i++) {
             VoterState voterState = voterStateList.get(i);
             VoterResult voterResult =
                     VoterClient.makeBoundedRegistrationRequest(
@@ -168,12 +168,12 @@ public class DemoMain {
         }
 
         // 4.2 coordinator certify
-        List<String> registrationResponseList = new ArrayList<>(VOTER_COUNT);
-        for (int i = 0; i < VOTER_COUNT; i++) {
+        List<String> registrationResponseList = new ArrayList<>(voter_count);
+        for (int i = 0; i < voter_count; i++) {
             CoordinatorResult coordinatorResult =
                     CoordinatorClient.certifyBoundedVoter(
                             Utils.protoToEncodedString(coordinatorState),
-                            BLANK_BALLOT_COUNT[i],
+                            blank_ballot_count[i],
                             registrationRequestList.get(i));
             registrationResponseList.add(coordinatorResult.registrationResponse);
 
@@ -184,7 +184,7 @@ public class DemoMain {
         }
 
         // 4.3 verifier verify blank ballot
-        for (int i = 0; i < VOTER_COUNT; i++) {
+        for (int i = 0; i < voter_count; i++) {
             VerifierResult verifierResult =
                     VerifierClient.verifyBlankBallot(
                             registrationRequestList.get(i), registrationResponseList.get(i));
@@ -193,15 +193,15 @@ public class DemoMain {
         System.out.println("Verify voter blank ballot successful.\n");
 
         // 5 voter vote
-        List<String> votingRequestList = new ArrayList<>(VOTER_COUNT);
-        List<VotingChoices> votingChoicesList = new ArrayList<>(VOTER_COUNT);
-        for (int i = 0; i < VOTER_COUNT; i++) {
+        List<String> votingRequestList = new ArrayList<>(voter_count);
+        List<VotingChoices> votingChoicesList = new ArrayList<>(voter_count);
+        for (int i = 0; i < voter_count; i++) {
             Builder votingChoicesBuilder = VotingChoices.newBuilder();
             for (int j = 0; j < candidates.size(); j++) {
                 votingChoicesBuilder.addChoice(
                         StringToIntPair.newBuilder()
                                 .setKey(candidates.get(j))
-                                .setValue(VOTING_BALLOT_COUNT[i][j]));
+                                .setValue(voting_ballot_count[i][j]));
             }
             VotingChoices votingChoices = votingChoicesBuilder.build();
             votingChoicesList.add(votingChoices);
@@ -219,9 +219,9 @@ public class DemoMain {
         List<RegulationInfo> regulationInfos = getRegulationInfos(votingChoicesList);
 
         // 5.1 blockchain verify vote request
-        List<String> blankBallots = new ArrayList<>(VOTER_COUNT);
+        List<String> blankBallots = new ArrayList<>(voter_count);
         String encodedSystemParameters = Utils.protoToEncodedString(systemParameters);
-        for (int i = 0; i < VOTER_COUNT; i++) {
+        for (int i = 0; i < voter_count; i++) {
             String voteRequest = votingRequestList.get(i);
             TransactionReceipt verifyVoteRequestReceipt =
                     storageClient.verifyBoundedVoteRequest(voteRequest, encodedSystemParameters);
@@ -256,8 +256,8 @@ public class DemoMain {
 
         // 6 counter counting
         String voteStorageSum = storageClient.getVoteStorageSum();
-        List<String> decryptedResultPartRequestList = new ArrayList<>(COUNTER_ID_LIST.size());
-        for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
+        List<String> decryptedResultPartRequestList = new ArrayList<>(counter_id_list.size());
+        for (int i = 0; i < counter_id_list.size(); i++) {
             CounterResult counterResult =
                     CounterClient.count(
                             Utils.protoToEncodedString(counterStateList.get(i)), voteStorageSum);
@@ -266,7 +266,7 @@ public class DemoMain {
         }
 
         // 6.1 blockchain verify count request
-        for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
+        for (int i = 0; i < counter_id_list.size(); i++) {
 
             storageClient.verifyCountRequest(
                     hPointShareList.get(i),
@@ -295,7 +295,7 @@ public class DemoMain {
                         Utils.protoToEncodedString(systemParameters),
                         voteStorageSum,
                         decryptedResultPartStorageSumTotal,
-                        MAX_VOTE_NUMBER);
+                        max_vote_number);
         VoteResultRequest voteResultRequest =
                 VoteResultRequest.parseFrom(Utils.stringToBytes(counterResult.voteResultRequest));
 
@@ -338,7 +338,7 @@ public class DemoMain {
         CoordinatorState coordinatorState = initCoordinator();
 
         // 3.1 save candidates on blockchain
-        storageClient.setCandidates(CANDIDATE_LIST);
+        storageClient.setCandidates(candidate_list);
 
         // NOTICE: The owner(coordinator or other administrator) who deploys the anonymous voting
         // contract can
@@ -351,16 +351,16 @@ public class DemoMain {
 
         // 3.3 query candidates from blockchain
         List<String> candidates = storageClient.getCandidates();
-        assertTrue("Query candidates failed.", candidates.equals(CANDIDATE_LIST));
+        assertTrue("Query candidates failed.", candidates.equals(candidate_list));
 
         // 4 voter init ==============================================
         List<VoterState> voterStateList;
         voterStateList = initVoterStateForUnboundedVoting(hPoint);
 
         // 4.1 voter register
-        List<String> registrationRequestList = new ArrayList<>(VOTER_COUNT);
+        List<String> registrationRequestList = new ArrayList<>(voter_count);
         SystemParametersStorage systemParameters = makeSystemParameters(hPoint, candidates);
-        for (int i = 0; i < VOTER_COUNT; i++) {
+        for (int i = 0; i < voter_count; i++) {
             VoterState voterState = voterStateList.get(i);
             VoterResult voterResult =
                     VoterClient.makeUnboundedRegistrationRequest(
@@ -370,12 +370,12 @@ public class DemoMain {
         }
 
         // 4.2 coordinator certify
-        List<String> registrationResponseList = new ArrayList<>(VOTER_COUNT);
-        for (int i = 0; i < VOTER_COUNT; i++) {
+        List<String> registrationResponseList = new ArrayList<>(voter_count);
+        for (int i = 0; i < voter_count; i++) {
             CoordinatorResult coordinatorResult =
                     CoordinatorClient.certifyUnboundedVoter(
                             Utils.protoToEncodedString(coordinatorState),
-                            BLANK_BALLOT_WEIGHT[i],
+                            blank_ballot_weight[i],
                             registrationRequestList.get(i));
             registrationResponseList.add(coordinatorResult.registrationResponse);
 
@@ -386,7 +386,7 @@ public class DemoMain {
         }
 
         // 4.3 verifier verify blank ballot
-        for (int i = 0; i < VOTER_COUNT; i++) {
+        for (int i = 0; i < voter_count; i++) {
             VerifierResult verifierResult =
                     VerifierClient.verifyBlankBallot(
                             registrationRequestList.get(i), registrationResponseList.get(i));
@@ -395,15 +395,15 @@ public class DemoMain {
         System.out.println("Verify voter blank ballot successful.\n");
 
         // 5 voter vote
-        List<String> votingRequestList = new ArrayList<>(VOTER_COUNT);
-        List<VotingChoices> votingChoicesList = new ArrayList<>(VOTER_COUNT);
-        for (int i = 0; i < VOTER_COUNT; i++) {
+        List<String> votingRequestList = new ArrayList<>(voter_count);
+        List<VotingChoices> votingChoicesList = new ArrayList<>(voter_count);
+        for (int i = 0; i < voter_count; i++) {
             Builder votingChoicesBuilder = VotingChoices.newBuilder();
             for (int j = 0; j < candidates.size(); j++) {
                 votingChoicesBuilder.addChoice(
                         StringToIntPair.newBuilder()
                                 .setKey(candidates.get(j))
-                                .setValue(VOTING_BALLOT_WEIGHT[i][j]));
+                                .setValue(voting_ballot_weight[i][j]));
             }
             VotingChoices votingChoices = votingChoicesBuilder.build();
             votingChoicesList.add(votingChoices);
@@ -422,8 +422,8 @@ public class DemoMain {
 
         // 5.1 blockchain verify vote request
         String encodedSystemParameters = Utils.protoToEncodedString(systemParameters);
-        List<String> blankBallots = new ArrayList<>(VOTER_COUNT);
-        for (int i = 0; i < VOTER_COUNT; i++) {
+        List<String> blankBallots = new ArrayList<>(voter_count);
+        for (int i = 0; i < voter_count; i++) {
             String voteRequest = votingRequestList.get(i);
             TransactionReceipt verifyVoteRequestReceipt =
                     storageClient.verifyUnboundedVoteRequest(voteRequest, encodedSystemParameters);
@@ -459,8 +459,8 @@ public class DemoMain {
 
         // 6 counter counting
         String voteStorageSum = storageClient.getVoteStorageSum();
-        List<String> decryptedResultPartRequestList = new ArrayList<>(COUNTER_ID_LIST.size());
-        for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
+        List<String> decryptedResultPartRequestList = new ArrayList<>(counter_id_list.size());
+        for (int i = 0; i < counter_id_list.size(); i++) {
             CounterResult counterResult =
                     CounterClient.count(
                             Utils.protoToEncodedString(counterStateList.get(i)), voteStorageSum);
@@ -469,7 +469,7 @@ public class DemoMain {
         }
 
         // 6.1 blockchain verify count request
-        for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
+        for (int i = 0; i < counter_id_list.size(); i++) {
 
             storageClient.verifyCountRequest(
                     hPointShareList.get(i),
@@ -498,7 +498,7 @@ public class DemoMain {
                         Utils.protoToEncodedString(systemParameters),
                         voteStorageSum,
                         decryptedResultPartStorageSumTotal,
-                        MAX_VOTE_NUMBER);
+                        max_vote_number);
         VoteResultRequest voteResultRequest =
                 VoteResultRequest.parseFrom(Utils.stringToBytes(counterResult.voteResultRequest));
 
@@ -537,8 +537,8 @@ public class DemoMain {
 
     private static List<RegulationInfo> getRegulationInfos(List<VotingChoices> votingChoicesList)
             throws InvalidProtocolBufferException {
-        List<RegulationInfo> regulationInfos = new ArrayList<>(VOTER_COUNT);
-        for (int i = 0; i < VOTER_COUNT; i++) {
+        List<RegulationInfo> regulationInfos = new ArrayList<>(voter_count);
+        for (int i = 0; i < voter_count; i++) {
             List<StringToIntPair> choiceList = votingChoicesList.get(i).getChoiceList();
             RegulationInfo.Builder regulationInfoBuilder = RegulationInfo.newBuilder();
             for (int k = 0; k < choiceList.size(); k++) {
@@ -623,9 +623,9 @@ public class DemoMain {
     private static List<String> queryHPointShareList(
             StorageExampleClient storageExampleClient, List<String> localHPointShareList)
             throws Exception {
-        List<String> hPointShareList = new ArrayList<>(COUNTER_ID_LIST.size());
-        for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
-            String counterId = COUNTER_ID_LIST.get(i);
+        List<String> hPointShareList = new ArrayList<>(counter_id_list.size());
+        for (int i = 0; i < counter_id_list.size(); i++) {
+            String counterId = counter_id_list.get(i);
             List<String> counterPartShareList = storageExampleClient.queryHPointShare(counterId);
             assertTrue(
                     "Query counter " + counterId + " hPointShare is empty.",
@@ -642,8 +642,8 @@ public class DemoMain {
     private static List<String> uploadHPointShare(
             StorageExampleClient storageExampleClient, List<CounterState> counterStateList)
             throws WedprException, InvalidProtocolBufferException, Exception {
-        List<String> localHPointShareList = new ArrayList<>(COUNTER_ID_LIST.size());
-        for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
+        List<String> localHPointShareList = new ArrayList<>(counter_id_list.size());
+        for (int i = 0; i < counter_id_list.size(); i++) {
             CounterResult counterResult =
                     CounterClient.makeSystemParametersShare(
                             Utils.protoToEncodedString(counterStateList.get(i)));
@@ -652,16 +652,16 @@ public class DemoMain {
                     SystemParametersShareRequest.parseFrom(
                             Utils.stringToBytes(counterResult.systemParametersShareRequest));
             String hPointShare = systemParametersShareRequest.getHPointShare();
-            storageExampleClient.insertHPointShare(COUNTER_ID_LIST.get(i), hPointShare);
+            storageExampleClient.insertHPointShare(counter_id_list.get(i), hPointShare);
             localHPointShareList.add(hPointShare);
         }
         return localHPointShareList;
     }
 
     public static List<CounterState> initCounter() throws PkeyGenException {
-        List<CounterState> counterStateList = new ArrayList<>(COUNTER_ID_LIST.size());
-        for (int i = 0; i < COUNTER_ID_LIST.size(); i++) {
-            String counterId = COUNTER_ID_LIST.get(i);
+        List<CounterState> counterStateList = new ArrayList<>(counter_id_list.size());
+        for (int i = 0; i < counter_id_list.size(); i++) {
+            String counterId = counter_id_list.get(i);
             String counterShare = Utils.getSecretKey(Utils.getSecret()).getSecretKey();
             CounterState counterState =
                     CounterState.newBuilder()
@@ -723,8 +723,8 @@ public class DemoMain {
 
     public static List<VoterState> initVoterStateForUnboundedVoting(String hPoint)
             throws PkeyGenException {
-        List<VoterState> voterStateList = new ArrayList<>(VOTER_COUNT);
-        for (int i = 0; i < VOTER_COUNT; i++) {
+        List<VoterState> voterStateList = new ArrayList<>(voter_count);
+        for (int i = 0; i < voter_count; i++) {
             SecretKey secretKey = Utils.getSecretKey(Utils.getSecret());
             SecretKey secretZeroKey = Utils.getSecretKey(Utils.getSecret());
             String secretR = secretKey.getSecretKey();
@@ -742,8 +742,8 @@ public class DemoMain {
 
     public static List<VoterState> initVoterStateForBoundedVoting(String hPoint)
             throws PkeyGenException {
-        List<VoterState> voterStateList = new ArrayList<>(VOTER_COUNT);
-        for (int i = 0; i < VOTER_COUNT; i++) {
+        List<VoterState> voterStateList = new ArrayList<>(voter_count);
+        for (int i = 0; i < voter_count; i++) {
             SecretKey secretKey = Utils.getSecretKey(Utils.getSecret());
             String secretR = secretKey.getSecretKey();
             VoterState voterState =

@@ -92,8 +92,8 @@ public class PerfAnonymousVotingUtils {
         List<CounterState> counterStateList = DemoMain.initCounter();
 
         // 2.1 counter make hPointShare and upload hPointShare
-        List<String> hPointShareList = new ArrayList<>(DemoMain.COUNTER_ID_LIST.size());
-        for (int i = 0; i < DemoMain.COUNTER_ID_LIST.size(); i++) {
+        List<String> hPointShareList = new ArrayList<>(DemoMain.counter_id_list.size());
+        for (int i = 0; i < DemoMain.counter_id_list.size(); i++) {
             CounterResult counterResult =
                     CounterClient.makeSystemParametersShare(
                             Utils.protoToEncodedString(counterStateList.get(i)));
@@ -104,7 +104,7 @@ public class PerfAnonymousVotingUtils {
             String hPointShare = systemParametersShareRequest.getHPointShare();
             TransactionReceipt insertHPointShareReceipt =
                     anonymousVotingExamplePerf
-                            .insertHPointShare(DemoMain.COUNTER_ID_LIST.get(i), hPointShare)
+                            .insertHPointShare(DemoMain.counter_id_list.get(i), hPointShare)
                             .send();
             Utils.checkTranactionReceipt(insertHPointShareReceipt);
             hPointShareList.add(hPointShare);
@@ -114,7 +114,7 @@ public class PerfAnonymousVotingUtils {
         CoordinatorState coordinatorState = DemoMain.initCoordinator();
 
         // 3.1 save candidates on blockchain
-        anonymousVotingExamplePerf.setCandidates(DemoMain.CANDIDATE_LIST).send();
+        anonymousVotingExamplePerf.setCandidates(DemoMain.candidate_list).send();
         TransactionReceipt nextContractStateReceipt =
                 anonymousVotingExamplePerf.nextContractState().send();
         Utils.checkTranactionReceipt(nextContractStateReceipt);
@@ -128,10 +128,10 @@ public class PerfAnonymousVotingUtils {
         List<VoterState> voterStateList = DemoMain.initVoterStateForBoundedVoting(hPoint);
 
         // 4.1 voter register
-        List<String> registrationRequestList = new ArrayList<>(DemoMain.VOTER_COUNT);
+        List<String> registrationRequestList = new ArrayList<>(DemoMain.voter_count);
         SystemParametersStorage systemParameters =
                 DemoMain.makeSystemParameters(hPoint, candidates);
-        for (int i = 0; i < DemoMain.VOTER_COUNT; i++) {
+        for (int i = 0; i < DemoMain.voter_count; i++) {
             VoterState voterState = voterStateList.get(i);
             VoterResult voterResult =
                     VoterClient.makeBoundedRegistrationRequest(
@@ -141,25 +141,25 @@ public class PerfAnonymousVotingUtils {
         }
 
         // 4.2 coordinator certify
-        List<String> registrationResponseList = new ArrayList<>(DemoMain.VOTER_COUNT);
-        for (int i = 0; i < DemoMain.VOTER_COUNT; i++) {
+        List<String> registrationResponseList = new ArrayList<>(DemoMain.voter_count);
+        for (int i = 0; i < DemoMain.voter_count; i++) {
             CoordinatorResult coordinatorResult =
                     CoordinatorClient.certifyBoundedVoter(
                             Utils.protoToEncodedString(coordinatorState),
-                            DemoMain.BLANK_BALLOT_COUNT[i],
+                            DemoMain.blank_ballot_count[i],
                             registrationRequestList.get(i));
             registrationResponseList.add(coordinatorResult.registrationResponse);
         }
 
         // 5 voter vote
-        List<String> votingRequestList = new ArrayList<>(DemoMain.VOTER_COUNT);
-        for (int i = 0; i < DemoMain.VOTER_COUNT; i++) {
+        List<String> votingRequestList = new ArrayList<>(DemoMain.voter_count);
+        for (int i = 0; i < DemoMain.voter_count; i++) {
             Builder votingChoicesBuilder = VotingChoices.newBuilder();
             for (int j = 0; j < candidates.size(); j++) {
                 votingChoicesBuilder.addChoice(
                         StringToIntPair.newBuilder()
                                 .setKey(candidates.get(j))
-                                .setValue(DemoMain.VOTING_BALLOT_COUNT[i][j]));
+                                .setValue(DemoMain.voting_ballot_count[i][j]));
             }
             VotingChoices votingChoices = votingChoicesBuilder.build();
             VoterState voterState = voterStateList.get(i);
@@ -227,8 +227,8 @@ public class PerfAnonymousVotingUtils {
         List<CounterState> counterStateList = DemoMain.initCounter();
 
         // 2.1 counter make hPointShare and upload hPointShare
-        List<String> localHPointShareList = new ArrayList<>(DemoMain.COUNTER_ID_LIST.size());
-        for (int i = 0; i < DemoMain.COUNTER_ID_LIST.size(); i++) {
+        List<String> localHPointShareList = new ArrayList<>(DemoMain.counter_id_list.size());
+        for (int i = 0; i < DemoMain.counter_id_list.size(); i++) {
             CounterResult counterResult =
                     CounterClient.makeSystemParametersShare(
                             Utils.protoToEncodedString(counterStateList.get(i)));
@@ -239,7 +239,7 @@ public class PerfAnonymousVotingUtils {
             String hPointShare = systemParametersShareRequest.getHPointShare();
             TransactionReceipt insertHPointShareReceipt =
                     anonymousVotingExamplePerf
-                            .insertHPointShare(DemoMain.COUNTER_ID_LIST.get(i), hPointShare)
+                            .insertHPointShare(DemoMain.counter_id_list.get(i), hPointShare)
                             .send();
             Utils.checkTranactionReceipt(insertHPointShareReceipt);
             localHPointShareList.add(hPointShare);
@@ -249,7 +249,7 @@ public class PerfAnonymousVotingUtils {
         CoordinatorState coordinatorState = DemoMain.initCoordinator();
 
         // 3.1 save candidates on blockchain
-        anonymousVotingExamplePerf.setCandidates(DemoMain.CANDIDATE_LIST).send();
+        anonymousVotingExamplePerf.setCandidates(DemoMain.candidate_list).send();
         TransactionReceipt nextContractStateReceipt =
                 anonymousVotingExamplePerf.nextContractState().send();
         Utils.checkTranactionReceipt(nextContractStateReceipt);
@@ -263,10 +263,10 @@ public class PerfAnonymousVotingUtils {
         List<VoterState> voterStateList = DemoMain.initVoterStateForUnboundedVoting(hPoint);
 
         // 4.1 voter register
-        List<String> registrationRequestList = new ArrayList<>(DemoMain.VOTER_COUNT);
+        List<String> registrationRequestList = new ArrayList<>(DemoMain.voter_count);
         SystemParametersStorage systemParameters =
                 DemoMain.makeSystemParameters(hPoint, candidates);
-        for (int i = 0; i < DemoMain.VOTER_COUNT; i++) {
+        for (int i = 0; i < DemoMain.voter_count; i++) {
             VoterState voterState = voterStateList.get(i);
             VoterResult voterResult =
                     VoterClient.makeUnboundedRegistrationRequest(
@@ -276,25 +276,25 @@ public class PerfAnonymousVotingUtils {
         }
 
         // 4.2 coordinator certify
-        List<String> registrationResponseList = new ArrayList<>(DemoMain.VOTER_COUNT);
-        for (int i = 0; i < DemoMain.VOTER_COUNT; i++) {
+        List<String> registrationResponseList = new ArrayList<>(DemoMain.voter_count);
+        for (int i = 0; i < DemoMain.voter_count; i++) {
             CoordinatorResult coordinatorResult =
                     CoordinatorClient.certifyUnboundedVoter(
                             Utils.protoToEncodedString(coordinatorState),
-                            DemoMain.BLANK_BALLOT_WEIGHT[i],
+                            DemoMain.blank_ballot_weight[i],
                             registrationRequestList.get(i));
             registrationResponseList.add(coordinatorResult.registrationResponse);
         }
 
         // 5 voter vote
-        List<String> votingRequestList = new ArrayList<>(DemoMain.VOTER_COUNT);
-        for (int i = 0; i < DemoMain.VOTER_COUNT; i++) {
+        List<String> votingRequestList = new ArrayList<>(DemoMain.voter_count);
+        for (int i = 0; i < DemoMain.voter_count; i++) {
             Builder votingChoicesBuilder = VotingChoices.newBuilder();
             for (int j = 0; j < candidates.size(); j++) {
                 votingChoicesBuilder.addChoice(
                         StringToIntPair.newBuilder()
                                 .setKey(candidates.get(j))
-                                .setValue(DemoMain.VOTING_BALLOT_WEIGHT[i][j]));
+                                .setValue(DemoMain.voting_ballot_weight[i][j]));
             }
             VotingChoices votingChoices = votingChoicesBuilder.build();
             VoterState voterState = voterStateList.get(i);
@@ -325,7 +325,7 @@ public class PerfAnonymousVotingUtils {
         List<String> votingRequestList = boundedVoteRequestParams.votingRequestList;
         String encodedSystemParameters = boundedVoteRequestParams.systemParameters;
 
-        for (int i = 0; i < DemoMain.VOTER_COUNT; i++) {
+        for (int i = 0; i < DemoMain.voter_count; i++) {
             String voteRequest = votingRequestList.get(i);
             anonymousVotingExamplePerf
                     .verifyBoundedVoteRequest(Utils.getUuid(), voteRequest, encodedSystemParameters)
@@ -341,8 +341,8 @@ public class PerfAnonymousVotingUtils {
         // counter counting
         String voteStorageSum = anonymousVotingExamplePerf.getVoteStorageSum().send();
         List<String> decryptedResultPartRequestList =
-                new ArrayList<>(DemoMain.COUNTER_ID_LIST.size());
-        for (int i = 0; i < DemoMain.COUNTER_ID_LIST.size(); i++) {
+                new ArrayList<>(DemoMain.counter_id_list.size());
+        for (int i = 0; i < DemoMain.counter_id_list.size(); i++) {
             CounterResult counterResult =
                     CounterClient.count(
                             Utils.protoToEncodedString(counterStateList.get(i)), voteStorageSum);
@@ -368,7 +368,7 @@ public class PerfAnonymousVotingUtils {
         List<String> hPointShareList = boundedVoteRequestParams.hPointShareList;
         List<String> votingRequestList = boundedVoteRequestParams.votingRequestList;
         String encodedSystemParameters = boundedVoteRequestParams.systemParameters;
-        for (int i = 0; i < DemoMain.VOTER_COUNT; i++) {
+        for (int i = 0; i < DemoMain.voter_count; i++) {
             String voteRequest = votingRequestList.get(i);
             anonymousVotingExamplePerf
                     .verifyBoundedVoteRequest(Utils.getUuid(), voteRequest, encodedSystemParameters)
@@ -385,8 +385,8 @@ public class PerfAnonymousVotingUtils {
         // counter counting
         String voteStorageSum = anonymousVotingExamplePerf.getVoteStorageSum().send();
         List<String> decryptedResultPartRequestList =
-                new ArrayList<>(DemoMain.COUNTER_ID_LIST.size());
-        for (int i = 0; i < DemoMain.COUNTER_ID_LIST.size(); i++) {
+                new ArrayList<>(DemoMain.counter_id_list.size());
+        for (int i = 0; i < DemoMain.counter_id_list.size(); i++) {
             CounterResult counterResult =
                     CounterClient.count(
                             Utils.protoToEncodedString(counterStateList.get(i)), voteStorageSum);
@@ -394,7 +394,7 @@ public class PerfAnonymousVotingUtils {
             decryptedResultPartRequestList.add(counterResult.decryptedResultPartRequest);
         }
         // 6.1 blockchain verify count request
-        for (int i = 0; i < DemoMain.COUNTER_ID_LIST.size(); i++) {
+        for (int i = 0; i < DemoMain.counter_id_list.size(); i++) {
             TransactionReceipt verifyCountRequestReceipt =
                     anonymousVotingExamplePerf
                             .verifyCountRequest(
@@ -422,7 +422,7 @@ public class PerfAnonymousVotingUtils {
                         encodedSystemParameters,
                         voteStorageSum,
                         decryptedResultPartStorageSum,
-                        DemoMain.MAX_VOTE_NUMBER);
+                        DemoMain.max_vote_number);
         VoteResultRequest voteResultRequest =
                 VoteResultRequest.parseFrom(Utils.stringToBytes(counterResult.voteResultRequest));
 
