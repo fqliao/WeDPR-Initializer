@@ -1,12 +1,11 @@
 package com.webank.wedpr.example.assethiding;
 
+import com.webank.wedpr.assethiding.AssethidingUtils;
 import com.webank.wedpr.assethiding.OwnerClient;
 import com.webank.wedpr.assethiding.OwnerResult;
 import com.webank.wedpr.assethiding.proto.CreditCredential;
 import com.webank.wedpr.assethiding.proto.CreditStorage;
 import com.webank.wedpr.assethiding.proto.OwnerState;
-import com.webank.wedpr.assethiding.proto.RegulationInfo;
-import com.webank.wedpr.assethiding.proto.SplitArgument;
 import com.webank.wedpr.assethiding.proto.SplitRequest;
 import com.webank.wedpr.assethiding.proto.TransactionInfo;
 import com.webank.wedpr.common.PublicKeyCrypto;
@@ -25,20 +24,14 @@ public class SplitCreditExampleProtocol {
             throws Exception {
 
         // 1 sender split step1
-        String encodedSenderOwnerState = Utils.protoToEncodedString(senderOwnerState);
-        OwnerResult ownerResultSenderSplitStep1 =
-                OwnerClient.senderSplitStep1(encodedSenderOwnerState);
-        Utils.checkWedprResult(ownerResultSenderSplitStep1);
-        // 2 receiver split step final
-        String encodedReceiverOwnerState = Utils.protoToEncodedString(receiverOwnerState);
-        String encodedTransactionInfo = Utils.protoToEncodedString(transactionInfo);
+        OwnerResult ownerResultSenderSplitStep1 = OwnerClient.senderSplitStep1(senderOwnerState);
 
+        // 2 receiver split step final
         OwnerResult ownerResultReceiverSplitStepFinal =
                 OwnerClient.receiverSplitStepFinal(
-                        encodedReceiverOwnerState,
-                        encodedTransactionInfo,
+                        receiverOwnerState,
+                        transactionInfo,
                         ownerResultSenderSplitStep1.splitArgument);
-        Utils.checkWedprResult(ownerResultReceiverSplitStepFinal);
         CreditCredential creditCredentialReceiver =
                 CreditCredential.parseFrom(
                         Utils.stringToBytes(ownerResultReceiverSplitStepFinal.creditCredential));
@@ -46,10 +39,9 @@ public class SplitCreditExampleProtocol {
         // 3 sender split step final
         OwnerResult ownerResultSenderSplitStepFinal =
                 OwnerClient.senderSplitStepFinal(
-                        encodedSenderOwnerState,
-                        encodedTransactionInfo,
+                        senderOwnerState,
+                        transactionInfo,
                         ownerResultReceiverSplitStepFinal.splitArgument);
-        Utils.checkWedprResult(ownerResultSenderSplitStepFinal);
         CreditCredential creditCredentialSender =
                 CreditCredential.parseFrom(
                         Utils.stringToBytes(ownerResultSenderSplitStepFinal.creditCredential));
@@ -74,64 +66,42 @@ public class SplitCreditExampleProtocol {
         System.out.println("Blockchain verify split credit successful!");
 
         // (Optional) Upload regulation information to blockchain.
-        // Sets sender regulation information.
-        String regulationCurrentCreditSender =
-                Utils.protoToEncodedString(
-                        creditCredentialSender.getCreditStorage().getCurrentCredit());
-        String regulationSpentCredit =
-                Utils.protoToEncodedString(
-                        senderOwnerState
-                                .getCreditCredential()
-                                .getCreditStorage()
-                                .getCurrentCredit());
-        SplitArgument splitArgumentSender =
-                SplitArgument.parseFrom(
-                        Utils.stringToBytes(ownerResultSenderSplitStep1.splitArgument));
-        String regulationRGSender = splitArgumentSender.getSender(0).getRG();
-        byte[] regulationInfoSender =
-                RegulationInfo.newBuilder()
-                        .setNumericalValue(transactionInfo.getCreditValue().getNumericalValue())
-                        .setStringValue(transactionInfo.getCreditValue().getStringValue())
-                        .setTransactionMessage(transactionInfo.getTransactionMessage())
-                        .setBlindingRG(regulationRGSender)
-                        .build()
-                        .toByteArray();
-
-        // Sets receiver regulation information.
-        String regulationCurrentCreditReceiver =
-                Utils.protoToEncodedString(
-                        creditCredentialReceiver.getCreditStorage().getCurrentCredit());
-        SplitArgument splitArgumentReceiver =
-                SplitArgument.parseFrom(
-                        Utils.stringToBytes(ownerResultReceiverSplitStepFinal.splitArgument));
-        String regulationRGReceiver = splitArgumentReceiver.getReceiver(0).getRG();
-        byte[] regulationInfoRecevier =
-                RegulationInfo.newBuilder()
-                        .setNumericalValue(transactionInfo.getCreditValue().getNumericalValue())
-                        .setStringValue(transactionInfo.getCreditValue().getStringValue())
-                        .setTransactionMessage(transactionInfo.getTransactionMessage())
-                        .setBlindingRG(regulationRGReceiver)
-                        .build()
-                        .toByteArray();
-
         // Encrypts regulation information for sender and receiver respectively.
         PublicKeyCrypto publicKeyCrypto = new PublicKeyCryptoExample();
-        String encryptedregulationInfoSender =
-                Utils.bytesToString(
-                        publicKeyCrypto.encrypt(regulatorPublicKey, regulationInfoSender));
-        String encryptedregulationInfoReceiver =
-                Utils.bytesToString(
-                        publicKeyCrypto.encrypt(regulatorPublicKey, regulationInfoRecevier));
 
-        // Saves regulation information on blockchain for sender and receiver respectively.
+        String regulationCurrentCreditSender =
+                AssethidingUtils.makeRegulationCurrentCredit(creditCredentialSender);
+        String regulationSpentCredit = AssethidingUtils.makeRegulationSpentCredit(senderOwnerState);
+        String regulationBlindingRGSender =
+                AssethidingUtils.makeSplitArgumentRGForSender(
+                        ownerResultSenderSplitStep1.splitArgument);
+        String encryptedRegulationInfoSender =
+                AssethidingUtils.makeRegulationInfo(
+                        publicKeyCrypto,
+                        regulatorPublicKey,
+                        transactionInfo,
+                        regulationBlindingRGSender);
         storageClient.insertRegulationInfo(
                 regulationCurrentCreditSender,
                 regulationSpentCredit,
-                encryptedregulationInfoSender);
+                encryptedRegulationInfoSender);
+
+        String regulationCurrentCreditReceiver =
+                AssethidingUtils.makeRegulationCurrentCredit(creditCredentialReceiver);
+        String regulationBlindingRGReceiver =
+                AssethidingUtils.makeSplitArgumentRGForReceiver(
+                        ownerResultReceiverSplitStepFinal.splitArgument);
+        String encryptedRegulationInfoReceiver =
+                AssethidingUtils.makeRegulationInfo(
+                        publicKeyCrypto,
+                        regulatorPublicKey,
+                        transactionInfo,
+                        regulationBlindingRGReceiver);
+        // Saves regulation information on blockchain for sender and receiver respectively.
         storageClient.insertRegulationInfo(
                 regulationCurrentCreditReceiver,
                 regulationSpentCredit,
-                encryptedregulationInfoReceiver);
+                encryptedRegulationInfoReceiver);
 
         return creditCredentialResult;
     }

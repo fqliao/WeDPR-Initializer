@@ -4,11 +4,11 @@ import com.webank.wedpr.assethiding.proto.CreditCredential;
 import com.webank.wedpr.assethiding.proto.CreditValue;
 import com.webank.wedpr.assethiding.proto.OwnerState;
 import com.webank.wedpr.assethiding.proto.TransactionInfo;
-import com.webank.wedpr.common.CommandUtils;
 import com.webank.wedpr.common.EncodedKeyPair;
 import com.webank.wedpr.common.PublicKeyCrypto;
 import com.webank.wedpr.common.PublicKeyCryptoExample;
 import com.webank.wedpr.common.Utils;
+import com.webank.wedpr.common.UtilsForTest;
 import com.webank.wedpr.example.assethiding.DemoMain;
 import com.webank.wedpr.example.assethiding.DemoMain.TransferType;
 import com.webank.wedpr.example.assethiding.FulfillCreditExampleProtocol;
@@ -51,12 +51,21 @@ public class TestClientMain {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Welcome to test hidden asset!");
-        CommandUtils.help();
+        UtilsForTest.help();
         System.out.println("hiddenAssetTableName:" + DemoMain.hiddenAssetTableName);
         System.out.println("regulationInfoTableName:" + DemoMain.regulationInfoTableName);
         System.out.println();
 
-        StorageExampleClient storageClient = DemoMain.initBlockchain();
+        // Deploy contract and create hidden asset table
+        ECKeyPair ecKeyPair = Utils.getEcKeyPair();
+        int groupID = 1;
+        StorageExampleClient storageClient =
+                AssethidingUtils.initContract(
+                        ecKeyPair,
+                        groupID,
+                        DemoMain.hiddenAssetTableName,
+                        DemoMain.regulationInfoTableName);
+
         EncodedKeyPair redeemerKeyPair = Utils.getEncodedKeyPair();
         ECKeyPair regulatorKeyPair = Utils.getEcKeyPair();
         byte[] regulatorSecretKey = regulatorKeyPair.getPrivateKey().toByteArray();
@@ -64,14 +73,14 @@ public class TestClientMain {
         PublicKeyCrypto publicKeyCrypto = new PublicKeyCryptoExample();
 
         HashMap<String, UserWallet> userWallets = new HashMap<>();
-        LineReader lineReader = CommandUtils.getLineReader();
+        LineReader lineReader = UtilsForTest.getLineReader();
         KeyMap<Binding> keymap = lineReader.getKeyMaps().get(LineReader.MAIN);
         keymap.bind(new Reference("beginning-of-line"), "\033[1~");
         keymap.bind(new Reference("end-of-line"), "\033[4~");
 
         while (true) {
             String request = lineReader.readLine("> ");
-            String[] params = CommandUtils.tokenizeCommand(request);
+            String[] params = UtilsForTest.tokenizeCommand(request);
             if (params.length < 1 || "".equals(params[0].trim())) {
                 System.out.print("");
                 continue;
@@ -116,7 +125,7 @@ public class TestClientMain {
                                         masterSecret,
                                         regulatorPublicKey);
 
-                        DemoMain.printIssueCreditInfo(
+                        AssethidingUtils.queryIssueCreditRegulationInfo(
                                 storageClient,
                                 publicKeyCrypto,
                                 regulatorSecretKey,
@@ -169,7 +178,7 @@ public class TestClientMain {
                                         masterSecret,
                                         regulatorPublicKey);
 
-                        DemoMain.printIssueCreditInfo(
+                        AssethidingUtils.queryIssueCreditRegulationInfo(
                                 storageClient,
                                 publicKeyCrypto,
                                 regulatorSecretKey,
@@ -401,7 +410,7 @@ public class TestClientMain {
                                         storageClient,
                                         regulatorPublicKey);
 
-                        DemoMain.printTransferCreditInfo(
+                        AssethidingUtils.queryTransferCreditRegulationInfo(
                                 storageClient,
                                 publicKeyCrypto,
                                 regulatorSecretKey,
@@ -498,7 +507,7 @@ public class TestClientMain {
                                         storageClient,
                                         regulatorPublicKey);
 
-                        DemoMain.printTransferCreditInfo(
+                        AssethidingUtils.queryTransferCreditRegulationInfo(
                                 storageClient,
                                 publicKeyCrypto,
                                 regulatorSecretKey,
@@ -636,7 +645,7 @@ public class TestClientMain {
                     CreditCredential senderReturnCreditCredential = creditCredentialResult.get(0);
                     CreditCredential receiverCreditCredential = creditCredentialResult.get(1);
 
-                    DemoMain.printSplitCreditInfo(
+                    AssethidingUtils.querySplitCreditRegulationInfo(
                             storageClient,
                             publicKeyCrypto,
                             regulatorSecretKey,
@@ -709,7 +718,7 @@ public class TestClientMain {
                     System.out.println("stringBalance is " + userWallet.stringBalance + ".\n");
                     break;
                 case "help":
-                    CommandUtils.help();
+                    UtilsForTest.help();
                     break;
                 case "quit":
                 case "q":

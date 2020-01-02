@@ -12,16 +12,20 @@ import com.webank.wedpr.assethiding.proto.TransferArgument;
 import com.webank.wedpr.assethiding.proto.TransferRequest;
 import com.webank.wedpr.common.EncodedKeyPair;
 import com.webank.wedpr.common.Utils;
+import com.webank.wedpr.common.WedprException;
 import com.webank.wedpr.example.assethiding.DemoMain;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import org.fisco.bcos.channel.client.Service;
 import org.fisco.bcos.web3j.crypto.ECKeyPair;
 import org.fisco.bcos.web3j.protocol.Web3j;
+import org.fisco.bcos.web3j.protocol.channel.ChannelEthereumService;
 import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.fisco.bcos.web3j.tx.gas.StaticGasProvider;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 class IssueCreditParams {
     public HiddenAssetExamplePerf hiddenAssetExamplePerf;
@@ -51,7 +55,7 @@ public class PerfHiddenAssetUtils {
         // 1 Deploy contract HiddenAssetExamplePerf.
         ECKeyPair ecKeyPair = Utils.getEcKeyPair();
         int groupID = 1;
-        Web3j web3j = DemoMain.getWeb3j(groupID);
+        Web3j web3j = getWeb3j(groupID);
         HiddenAssetExamplePerf hiddenAssetExamplePerf =
                 HiddenAssetExamplePerf.deploy(
                                 web3j,
@@ -76,7 +80,6 @@ public class PerfHiddenAssetUtils {
         byte[] masterSecret = Utils.decryptSecret(encryptedSecret, "example123");
         String secretKey = Utils.getSecretKey(masterSecret).getSecretKey();
         OwnerResult ownerResult = OwnerClient.issueCredit(secretKey);
-        Utils.checkWedprResult(ownerResult);
 
         // 4 Redeemer confirm credit.
         EncodedKeyPair redeemerKeyPair = Utils.getEncodedKeyPair();
@@ -84,7 +87,6 @@ public class PerfHiddenAssetUtils {
         CreditValue creditValue = CreditValue.newBuilder().setNumericalValue(value).build();
         RedeemerResult redeemerResult =
                 RedeemerClient.confirmNumericalCredit(redeemerKeyPair, ownerResult, creditValue);
-        Utils.checkWedprResult(redeemerResult);
 
         // 5 Clear issue credit secret data.
         IssueArgument issueArgument =
@@ -128,20 +130,14 @@ public class PerfHiddenAssetUtils {
                         .setTransactionMessage("transfer")
                         .build();
         // 1 receiver transfer step1
-        String encodedTransactionInfo = Utils.protoToEncodedString(transactionInfo);
-        String encodedReceiverOwnerState = Utils.protoToEncodedString(receiverOwnerState);
         OwnerResult ownerResult = null;
         ownerResult =
-                OwnerClient.receiverTransferNumericalStep1(
-                        encodedReceiverOwnerState, encodedTransactionInfo);
-        Utils.checkWedprResult(ownerResult);
+                OwnerClient.receiverTransferNumericalStep1(receiverOwnerState, transactionInfo);
         // 2 sender transfer step final
-        String encodedSenderOwnerState = Utils.protoToEncodedString(senderOwnerState);
         String encodedTransferArgument = ownerResult.transferArgument;
         ownerResult =
                 OwnerClient.senderTransferNumericalFinal(
-                        encodedSenderOwnerState, encodedTransactionInfo, encodedTransferArgument);
-        Utils.checkWedprResult(ownerResult);
+                        senderOwnerState, transactionInfo, encodedTransferArgument);
         // 3 verify transfer credit and remove old credit and save new credit on blockchain
         // Clear RG in transferRequest.
         TransferRequest transferRequest =
@@ -188,20 +184,14 @@ public class PerfHiddenAssetUtils {
                         .build();
 
         // 1 sender split step1
-        String encodedSenderOwnerState = Utils.protoToEncodedString(senderOwnerState);
-        OwnerResult splitResultSenderSplitStep1 =
-                OwnerClient.senderSplitStep1(encodedSenderOwnerState);
-        Utils.checkWedprResult(splitResultSenderSplitStep1);
-        // 2 receiver split step final
-        String encodedReceiverOwnerState = Utils.protoToEncodedString(receiverOwnerState);
-        String encodedTransactionInfo = Utils.protoToEncodedString(transactionInfo);
+        OwnerResult splitResultSenderSplitStep1 = OwnerClient.senderSplitStep1(senderOwnerState);
 
+        // 2 receiver split step final
         OwnerResult splitResultReceiverSplitStepFinal =
                 OwnerClient.receiverSplitStepFinal(
-                        encodedReceiverOwnerState,
-                        encodedTransactionInfo,
+                        receiverOwnerState,
+                        transactionInfo,
                         splitResultSenderSplitStep1.splitArgument);
-        Utils.checkWedprResult(splitResultReceiverSplitStepFinal);
 
         CreditCredential creditCredentialReceiver =
                 CreditCredential.parseFrom(
@@ -210,10 +200,9 @@ public class PerfHiddenAssetUtils {
         // 3 sender split step final
         OwnerResult splitResultSenderSplitStepFinal =
                 OwnerClient.senderSplitStepFinal(
-                        encodedSenderOwnerState,
-                        encodedTransactionInfo,
+                        senderOwnerState,
+                        transactionInfo,
                         splitResultReceiverSplitStepFinal.splitArgument);
-        Utils.checkWedprResult(splitResultSenderSplitStepFinal);
 
         CreditCredential creditCredentialSender =
                 CreditCredential.parseFrom(
@@ -271,5 +260,23 @@ public class PerfHiddenAssetUtils {
         splitCreditParams.splitRequest = handledSplitRequest;
 
         return splitCreditParams;
+    }
+
+    public static Web3j getWeb3j(int groupID) throws Exception {
+        ClassPathXmlApplicationContext context = null;
+        try {
+            context = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
+            Service service = context.getBean(Service.class);
+            service.setGroupId(groupID);
+            service.run();
+
+            ChannelEthereumService channelEthereumService = new ChannelEthereumService();
+            channelEthereumService.setChannelService(service);
+            return Web3j.build(channelEthereumService, groupID);
+        } catch (Exception e) {
+            throw new WedprException(e);
+        } finally {
+            context.close();
+        }
     }
 }

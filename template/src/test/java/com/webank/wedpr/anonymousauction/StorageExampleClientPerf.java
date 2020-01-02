@@ -1,26 +1,29 @@
-package com.webank.wedpr.example.anonymousauction;
+package com.webank.wedpr.anonymousauction;
 
-import com.webank.wedpr.anonymousauction.BidType;
 import com.webank.wedpr.anonymousauction.proto.AllBidStorageRequest;
 import com.webank.wedpr.anonymousauction.proto.BidStorage;
 import com.webank.wedpr.anonymousauction.proto.SystemParametersStorage;
 import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.common.WedprException;
+import com.webank.wedpr.example.anonymousauction.BidWinner;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.fisco.bcos.web3j.tuples.generated.Tuple2;
+import org.fisco.bcos.web3j.tx.txdecode.TransactionDecoder;
+import org.fisco.bcos.web3j.tx.txdecode.TransactionDecoderFactory;
 
-public class StorageExampleClient {
+public class StorageExampleClientPerf {
 
-    private AnonymousAuctionExample anonymousAuction;
+    private AnonymousAuctionExamplePerf anonymousAuction;
     private String bidderTableName;
     private String bidderIdTableName;
     private String regulationInfoTableName;
+    private TransactionDecoder transactionDecoder;
 
-    public StorageExampleClient(
-            AnonymousAuctionExample anonymousAuction,
+    public StorageExampleClientPerf(
+            AnonymousAuctionExamplePerf anonymousAuction,
             String bidderTableName,
             String bidderIdTableName,
             String regulationInfoTableName) {
@@ -28,6 +31,17 @@ public class StorageExampleClient {
         this.bidderTableName = bidderTableName;
         this.bidderIdTableName = bidderIdTableName;
         this.regulationInfoTableName = regulationInfoTableName;
+        transactionDecoder =
+                TransactionDecoderFactory.buildTransactionDecoder(
+                        AnonymousAuctionExamplePerf.ABI, AnonymousAuctionExamplePerf.BINARY);
+    }
+
+    public AnonymousAuctionExamplePerf getAnonymousAuction() {
+        return anonymousAuction;
+    }
+
+    public TransactionDecoder getTransactionDecoder() {
+        return transactionDecoder;
     }
 
     /**
@@ -67,7 +81,6 @@ public class StorageExampleClient {
      * Uploads bidStorage.
      *
      * @param bidRequest
-     * @return
      * @throws Exception
      */
     public String uploadBidStorage(String bidRequest) throws Exception {
@@ -85,10 +98,12 @@ public class StorageExampleClient {
      * @param bidComparisonStorage
      * @throws Exception
      */
-    public void uploadBidComparisonStorage(String bidderId, String bidComparisonRequest)
+    public void uploadBidComparisonStorage(String bidCounter, String bidComparisonRequest)
             throws Exception {
         TransactionReceipt transactionReceipt =
-                anonymousAuction.uploadBidComparisonStorage(bidderId, bidComparisonRequest).send();
+                anonymousAuction
+                        .uploadBidComparisonStorage(bidCounter, bidComparisonRequest)
+                        .send();
         Utils.checkTranactionReceipt(transactionReceipt);
     }
 

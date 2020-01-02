@@ -7,6 +7,7 @@ import com.webank.wedpr.selectivedisclosure.CredentialTemplateStorage;
 import com.webank.wedpr.selectivedisclosure.IssuerClient;
 import com.webank.wedpr.selectivedisclosure.IssuerResult;
 import com.webank.wedpr.selectivedisclosure.PredicateType;
+import com.webank.wedpr.selectivedisclosure.SelectivedisclosureUtils;
 import com.webank.wedpr.selectivedisclosure.UserClient;
 import com.webank.wedpr.selectivedisclosure.UserResult;
 import com.webank.wedpr.selectivedisclosure.VerifierClient;
@@ -40,8 +41,8 @@ public class DemoMain {
         credentialInfoMap.put("balance", "10000");
 
         // Predicate support: LT LE GT GE EQ
-        Predicate predicate1 = Utils.makePredicate("age", PredicateType.EQ, 20);
-        Predicate predicate2 = Utils.makePredicate("balance", PredicateType.GE, 1000);
+        Predicate predicate1 = Utils.makePredicate("age", PredicateType.GE, 20);
+        Predicate predicate2 = Utils.makePredicate("balance", PredicateType.GE, 10000);
         Predicate predicate3 = Utils.makePredicate("balance", PredicateType.LT, 10001);
         predicateList.add(predicate1);
         predicateList.add(predicate2);
@@ -55,6 +56,7 @@ public class DemoMain {
     public static void run() throws WedprException, InvalidProtocolBufferException {
         // 1 Issuer make credential template.
         IssuerResult issuerResult = IssuerClient.makeCredentialTemplate(attributeList);
+        System.out.println("attributeList:" + attributeList);
         // Issuer save the templateSecretKey
         String templateSecretKey = issuerResult.templateSecretKey;
         CredentialTemplateStorage credentialTemplateStorage =
@@ -63,6 +65,7 @@ public class DemoMain {
         // 2 User make credential.
         UserResult userResult =
                 UserClient.makeCredential(credentialInfoMap, credentialTemplateStorage);
+        System.out.println("credentialInfoMap:" + credentialInfoMap);
         String credentialSignatureRequest = userResult.credentialSignatureRequest;
         // masterSecret is saved by User
         String masterSecret = userResult.masterSecret;
@@ -91,19 +94,15 @@ public class DemoMain {
                         issuerNonce);
         // newCredentialSignature is saved by User.
         String blindedCredentialSignature = userResult.credentialSignature;
-
         // 5 User set VerificationRule.
         VerificationRule verificationRule =
-                VerificationRule.newBuilder()
-                        .addAllRevealedAttribute(revealedAttributeList)
-                        .addAllPredicateAttribute(predicateList)
-                        .build();
+                SelectivedisclosureUtils.makeVerificationRule(revealedAttributeList, predicateList);
+        System.out.println("verificationRule:" + verificationRule);
 
-        String encodedVerificationRule = Utils.protoToEncodedString(verificationRule);
         // 6 User prove credentialInfo.
         userResult =
                 UserClient.proveCredentialInfo(
-                        encodedVerificationRule,
+                        verificationRule,
                         blindedCredentialSignature,
                         credentialInfoMap,
                         credentialTemplateStorage,
@@ -112,7 +111,7 @@ public class DemoMain {
 
         // 7 Verifier verify credential proof.
         VerifierResult verifierResult =
-                VerifierClient.verifyProof(encodedVerificationRule, verificationRequest);
+                VerifierClient.verifyProof(verificationRule, verificationRequest);
         Utils.checkWedprResult(verifierResult);
         System.out.println("Verify successfully!");
 

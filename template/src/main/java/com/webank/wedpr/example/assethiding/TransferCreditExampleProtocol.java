@@ -1,12 +1,11 @@
 package com.webank.wedpr.example.assethiding;
 
+import com.webank.wedpr.assethiding.AssethidingUtils;
 import com.webank.wedpr.assethiding.OwnerClient;
 import com.webank.wedpr.assethiding.OwnerResult;
 import com.webank.wedpr.assethiding.proto.CreditCredential;
 import com.webank.wedpr.assethiding.proto.OwnerState;
-import com.webank.wedpr.assethiding.proto.RegulationInfo;
 import com.webank.wedpr.assethiding.proto.TransactionInfo;
-import com.webank.wedpr.assethiding.proto.TransferArgument;
 import com.webank.wedpr.common.PublicKeyCrypto;
 import com.webank.wedpr.common.PublicKeyCryptoExample;
 import com.webank.wedpr.common.Utils;
@@ -23,36 +22,28 @@ public class TransferCreditExampleProtocol {
             byte[] regulatorPublicKey)
             throws Exception {
         // 1 receiver transfer step1
-        String encodedTransactionInfo = Utils.protoToEncodedString(transactionInfo);
-        String encodedReceiverOwnerState = Utils.protoToEncodedString(receiverOwnerState);
         OwnerResult ownerResult = null;
         if (transferType == TransferType.Numberic) {
             ownerResult =
-                    OwnerClient.receiverTransferNumericalStep1(
-                            encodedReceiverOwnerState, encodedTransactionInfo);
+                    OwnerClient.receiverTransferNumericalStep1(receiverOwnerState, transactionInfo);
         } else {
             ownerResult =
                     OwnerClient.receiverTransferNonnumericalStep1(
-                            encodedReceiverOwnerState, encodedTransactionInfo);
+                            receiverOwnerState, transactionInfo);
         }
-        Utils.checkWedprResult(ownerResult);
+
         // 2 sender transfer step final
-        String encodedSenderOwnerState = Utils.protoToEncodedString(senderOwnerState);
         String encodedTransferArgument = ownerResult.transferArgument;
         if (transferType == TransferType.Numberic) {
             ownerResult =
                     OwnerClient.senderTransferNumericalFinal(
-                            encodedSenderOwnerState,
-                            encodedTransactionInfo,
-                            encodedTransferArgument);
+                            senderOwnerState, transactionInfo, encodedTransferArgument);
         } else {
             ownerResult =
                     OwnerClient.senderTransferNonnumericalFinal(
-                            encodedSenderOwnerState,
-                            encodedTransactionInfo,
-                            encodedTransferArgument);
+                            senderOwnerState, transactionInfo, encodedTransferArgument);
         }
-        Utils.checkWedprResult(ownerResult);
+
         // 3 verify transfer credit and remove old credit and save new credit on blockchain
         storageClient.transferCredit(ownerResult.transferRequest);
 
@@ -61,40 +52,24 @@ public class TransferCreditExampleProtocol {
         // 4 receiver transfer step final
         String encodedCreditCredential = ownerResult.creditCredential;
         OwnerResult receiverOwnerResult =
-                OwnerClient.receiverTransferFinal(
-                        encodedReceiverOwnerState, encodedCreditCredential);
+                OwnerClient.receiverTransferFinal(receiverOwnerState, encodedCreditCredential);
 
         String encodeCreditCredentialForReceiver = receiverOwnerResult.creditCredential;
         CreditCredential creditCredentialForRecevier =
                 CreditCredential.parseFrom(Utils.stringToBytes(encodeCreditCredentialForReceiver));
 
         // (Optional) Upload regulation information to blockchain.
-        String regulationCurrentCredit =
-                Utils.protoToEncodedString(
-                        creditCredentialForRecevier.getCreditStorage().getCurrentCredit());
-        String regulationSpentCredit =
-                Utils.protoToEncodedString(
-                        senderOwnerState
-                                .getCreditCredential()
-                                .getCreditStorage()
-                                .getCurrentCredit());
-        TransferArgument transferArgument =
-                TransferArgument.parseFrom(Utils.stringToBytes(ownerResult.transferArgument));
-        String regulationRG = transferArgument.getRG();
-        byte[] regulationInfo =
-                RegulationInfo.newBuilder()
-                        .setNumericalValue(transactionInfo.getCreditValue().getNumericalValue())
-                        .setStringValue(transactionInfo.getCreditValue().getStringValue())
-                        .setTransactionMessage(transactionInfo.getTransactionMessage())
-                        .setBlindingRG(regulationRG)
-                        .build()
-                        .toByteArray();
-
         PublicKeyCrypto publicKeyCrypto = new PublicKeyCryptoExample();
-        String encryptedregulationInfo =
-                Utils.bytesToString(publicKeyCrypto.encrypt(regulatorPublicKey, regulationInfo));
+        String regulationCurrentCredit =
+                AssethidingUtils.makeRegulationCurrentCredit(creditCredentialForRecevier);
+        String regulationSpentCredit = AssethidingUtils.makeRegulationSpentCredit(senderOwnerState);
+        String regulationBlindingRG =
+                AssethidingUtils.makeTransferBlindingRG(ownerResult.transferArgument);
+        String encryptedRegulationInfo =
+                AssethidingUtils.makeRegulationInfo(
+                        publicKeyCrypto, regulatorPublicKey, transactionInfo, regulationBlindingRG);
         storageClient.insertRegulationInfo(
-                regulationCurrentCredit, regulationSpentCredit, encryptedregulationInfo);
+                regulationCurrentCredit, regulationSpentCredit, encryptedRegulationInfo);
 
         return creditCredentialForRecevier;
     }

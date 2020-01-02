@@ -5,7 +5,6 @@ import com.webank.wedpr.assethiding.RedeemerResult;
 import com.webank.wedpr.assethiding.proto.CreditCredential;
 import com.webank.wedpr.assethiding.proto.CreditValue;
 import com.webank.wedpr.common.EncodedKeyPair;
-import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.example.assethiding.DemoMain.TransferType;
 
 public class FulfillCreditExampleProtocol {
@@ -19,14 +18,11 @@ public class FulfillCreditExampleProtocol {
         RedeemerResult redeemerFulfillResult = null;
         if (transferType == TransferType.Numberic) {
             redeemerFulfillResult =
-                    RedeemerClient.fulfillNumericalCredit(
-                            redeemerKeyPair, Utils.protoToEncodedString(creditCredential));
+                    RedeemerClient.fulfillNumericalCredit(redeemerKeyPair, creditCredential);
         } else {
             redeemerFulfillResult =
-                    RedeemerClient.fulfillNonnumericalCredit(
-                            redeemerKeyPair, Utils.protoToEncodedString(creditCredential));
+                    RedeemerClient.fulfillNonnumericalCredit(redeemerKeyPair, creditCredential);
         }
-        Utils.checkWedprResult(redeemerFulfillResult);
 
         storageClient.fulfillCredit(redeemerFulfillResult.fulfillArgument);
         System.out.println("Blockchain verify fulfill credit successful!");

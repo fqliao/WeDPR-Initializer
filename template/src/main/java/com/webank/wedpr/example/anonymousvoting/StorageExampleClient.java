@@ -1,5 +1,7 @@
 package com.webank.wedpr.example.anonymousvoting;
 
+import com.webank.wedpr.anonymousvoting.proto.SystemParametersStorage;
+import com.webank.wedpr.anonymousvoting.proto.VoteResultRequest;
 import com.webank.wedpr.common.Utils;
 import java.math.BigInteger;
 import java.util.List;
@@ -22,15 +24,15 @@ public class StorageExampleClient {
             AnonymousVotingExample anonymousVoting,
             String voterTableName,
             String counterTableName,
-            String regulationInfoTableName,
             String voterAggregateTableName,
-            String counterAggregateTableName) {
+            String counterAggregateTableName,
+            String regulationInfoTableName) {
         this.anonymousVoting = anonymousVoting;
         this.voterTableName = voterTableName;
         this.counterTableName = counterTableName;
-        this.regulationInfoTableName = regulationInfoTableName;
         this.voterAggregateTableName = voterAggregateTableName;
         this.counterAggregateTableName = counterAggregateTableName;
+        this.regulationInfoTableName = regulationInfoTableName;
         transactionDecoder =
                 TransactionDecoderFactory.buildTransactionDecoder(AnonymousVotingExample.ABI, "");
     }
@@ -53,20 +55,36 @@ public class StorageExampleClient {
     }
 
     public TransactionReceipt verifyUnboundedVoteRequest(
-            String voteRequest, String systemParameters) throws Exception {
-        return anonymousVoting.verifyUnboundedVoteRequest(voteRequest, systemParameters).send();
-    }
-
-    public TransactionReceipt verifyBoundedVoteRequest(String voteRequest, String systemParameters)
-            throws Exception {
-        return anonymousVoting.verifyBoundedVoteRequest(voteRequest, systemParameters).send();
-    }
-
-    public boolean aggregateVoteStorage(String systemParameters) throws Exception {
+            String voteRequest, SystemParametersStorage systemParameters) throws Exception {
         TransactionReceipt transactionReceipt =
-                anonymousVoting.aggregateVoteStorage(systemParameters).send();
+                anonymousVoting
+                        .verifyUnboundedVoteRequest(
+                                voteRequest, Utils.protoToEncodedString(systemParameters))
+                        .send();
+        Utils.checkTranactionReceipt(transactionReceipt);
+        return transactionReceipt;
+    }
+
+    public TransactionReceipt verifyBoundedVoteRequest(
+            String voteRequest, SystemParametersStorage systemParameters) throws Exception {
+        TransactionReceipt transactionReceipt =
+                anonymousVoting
+                        .verifyBoundedVoteRequest(
+                                voteRequest, Utils.protoToEncodedString(systemParameters))
+                        .send();
+        Utils.checkTranactionReceipt(transactionReceipt);
+        return transactionReceipt;
+    }
+
+    public boolean aggregateVoteStorage(SystemParametersStorage systemParameters) throws Exception {
+        TransactionReceipt transactionReceipt =
+                anonymousVoting
+                        .aggregateVoteStorage(Utils.protoToEncodedString(systemParameters))
+                        .send();
+        Utils.checkTranactionReceipt(transactionReceipt);
         List<ResultEntity> receiptOutputResult =
                 Utils.getReceiptOutputResult(transactionDecoder, transactionReceipt);
+
         return (Boolean) receiptOutputResult.get(0).getData();
     }
 
@@ -74,19 +92,25 @@ public class StorageExampleClient {
             String hPointShare,
             String decryptedRequest,
             String voteStorage,
-            String systemParameters)
+            SystemParametersStorage systemParameters)
             throws Exception {
         TransactionReceipt transactionReceipt =
                 anonymousVoting
                         .verifyCountRequest(
-                                hPointShare, decryptedRequest, voteStorage, systemParameters)
+                                hPointShare,
+                                decryptedRequest,
+                                voteStorage,
+                                Utils.protoToEncodedString(systemParameters))
                         .send();
         Utils.checkTranactionReceipt(transactionReceipt);
     }
 
-    public boolean aggregateDecryptedPart(String systemParameters) throws Exception {
+    public boolean aggregateDecryptedPart(SystemParametersStorage systemParameters)
+            throws Exception {
         TransactionReceipt transactionReceipt =
-                anonymousVoting.aggregateDecryptedPart(systemParameters).send();
+                anonymousVoting
+                        .aggregateDecryptedPart(Utils.protoToEncodedString(systemParameters))
+                        .send();
         Utils.checkTranactionReceipt(transactionReceipt);
         List<ResultEntity> receiptOutputResult =
                 Utils.getReceiptOutputResult(transactionDecoder, transactionReceipt);
@@ -128,10 +152,15 @@ public class StorageExampleClient {
         Utils.checkTranactionReceipt(transactionReceipt);
     }
 
-    public void verifyVoteResult(String voteResultRequest, String systemParameters)
+    public void verifyVoteResult(
+            VoteResultRequest voteResultRequest, SystemParametersStorage systemParameters)
             throws Exception {
         TransactionReceipt transactionReceipt =
-                anonymousVoting.verifyVoteResult(voteResultRequest, systemParameters).send();
+                anonymousVoting
+                        .verifyVoteResult(
+                                Utils.protoToEncodedString(voteResultRequest),
+                                Utils.protoToEncodedString(systemParameters))
+                        .send();
         Utils.checkTranactionReceipt(transactionReceipt);
     }
 

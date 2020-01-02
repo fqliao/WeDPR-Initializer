@@ -1,8 +1,8 @@
 package com.webank.wedpr.anonymousvoting;
 
-import com.webank.wedpr.common.CommandUtils;
 import com.webank.wedpr.common.PublicKeyCryptoExample;
 import com.webank.wedpr.common.Utils;
+import com.webank.wedpr.common.UtilsForTest;
 import com.webank.wedpr.example.anonymousvoting.DemoMain;
 import java.util.Arrays;
 import java.util.List;
@@ -19,7 +19,7 @@ public class TestClientMain {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Welcome to test anonymous voting!");
-        LineReader lineReader = CommandUtils.getLineReader();
+        LineReader lineReader = UtilsForTest.getLineReader();
         KeyMap<Binding> keymap = lineReader.getKeyMaps().get(LineReader.MAIN);
         keymap.bind(new Reference("beginning-of-line"), "\033[1~");
         keymap.bind(new Reference("end-of-line"), "\033[4~");
@@ -31,7 +31,7 @@ public class TestClientMain {
             while (votingTypeFlag) {
                 System.out.println(
                         "Please input number to select voting type. 1: vote bounded, 2: vote unbounded");
-                params = CommandUtils.tokenizeCommand(lineReader.readLine("> "));
+                params = UtilsForTest.tokenizeCommand(lineReader.readLine("> "));
                 if (params.length == 0) {
                     continue;
                 }
@@ -55,7 +55,7 @@ public class TestClientMain {
             while (candidatesFlag) {
                 System.out.println("Please input candidates name list:");
                 System.out.println("Example: \"Alice\" \"Bob\" \"Kevin\"");
-                params = CommandUtils.tokenizeCommand(lineReader.readLine(votingType + "> "));
+                params = UtilsForTest.tokenizeCommand(lineReader.readLine(votingType + "> "));
                 if (params.length == 0) {
                     continue;
                 }
@@ -85,7 +85,7 @@ public class TestClientMain {
             while (counterIdsFlag) {
                 System.out.println("Please input counter id list:");
                 System.out.println("Example: \"100\" \"101\"");
-                params = CommandUtils.tokenizeCommand(lineReader.readLine(votingType + "> "));
+                params = UtilsForTest.tokenizeCommand(lineReader.readLine(votingType + "> "));
                 if (params.length == 0) {
                     continue;
                 }
@@ -115,7 +115,7 @@ public class TestClientMain {
             while (voterCountFlag) {
                 System.out.println("Please input voter numbers:");
                 System.out.println("Example: 3");
-                params = CommandUtils.tokenizeCommand(lineReader.readLine(votingType + "> "));
+                params = UtilsForTest.tokenizeCommand(lineReader.readLine(votingType + "> "));
                 if (params.length == 0) {
                     System.out.println(
                             "Error: please provide voter numbers by integer mode from 0 to "
@@ -140,7 +140,7 @@ public class TestClientMain {
             while (blankBallotsFlag) {
                 System.out.println("Please input blank ballot count for each voter:");
                 System.out.println("Example: 10 20 30");
-                params = CommandUtils.tokenizeCommand(lineReader.readLine(votingType + "> "));
+                params = UtilsForTest.tokenizeCommand(lineReader.readLine(votingType + "> "));
                 if (params.length != voterCount) {
                     System.out.println(
                             "Error: please provide " + voterCount + " voter ballot count.\n");
@@ -175,7 +175,7 @@ public class TestClientMain {
                         System.out.println("Example for bounded: 1 2 3");
                         System.out.println("Example for unbounded: 10 10 0");
                     }
-                    params = CommandUtils.tokenizeCommand(lineReader.readLine(votingType + "> "));
+                    params = UtilsForTest.tokenizeCommand(lineReader.readLine(votingType + "> "));
                     if (params.length != candidates.size()) {
                         System.out.println(
                                 "Error: please provide " + candidates.size() + " voting ballot.\n");
@@ -244,7 +244,7 @@ public class TestClientMain {
             while (maxVoteNumberFlag) {
                 System.out.println("Please input max vote number to caculate ballot:");
                 System.out.println("Example: 1000");
-                params = CommandUtils.tokenizeCommand(lineReader.readLine(votingType + "> "));
+                params = UtilsForTest.tokenizeCommand(lineReader.readLine(votingType + "> "));
                 if (params.length == 0) {
                     continue;
                 }

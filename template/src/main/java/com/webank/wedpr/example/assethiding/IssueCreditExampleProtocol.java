@@ -1,13 +1,12 @@
 package com.webank.wedpr.example.assethiding;
 
+import com.webank.wedpr.assethiding.AssethidingUtils;
 import com.webank.wedpr.assethiding.OwnerClient;
 import com.webank.wedpr.assethiding.OwnerResult;
 import com.webank.wedpr.assethiding.RedeemerClient;
 import com.webank.wedpr.assethiding.RedeemerResult;
 import com.webank.wedpr.assethiding.proto.CreditCredential;
 import com.webank.wedpr.assethiding.proto.CreditValue;
-import com.webank.wedpr.assethiding.proto.IssueArgument;
-import com.webank.wedpr.assethiding.proto.RegulationInfo;
 import com.webank.wedpr.common.EncodedKeyPair;
 import com.webank.wedpr.common.PublicKeyCrypto;
 import com.webank.wedpr.common.PublicKeyCryptoExample;
@@ -27,8 +26,8 @@ public class IssueCreditExampleProtocol {
         // 1 issue credit
         // 1.1 owner: issue credit
         String secretKey = Utils.getSecretKey(masterSecret).getSecretKey();
+
         OwnerResult ownerResult = OwnerClient.issueCredit(secretKey);
-        Utils.checkWedprResult(ownerResult);
         System.out.println("Owner send issue credit request successful!");
 
         // 1.2 redeemer: confirm credit
@@ -42,7 +41,6 @@ public class IssueCreditExampleProtocol {
                     RedeemerClient.confirmNonnumericalCredit(
                             redeemerKeyPair, ownerResult, creditValue);
         }
-        Utils.checkWedprResult(redeemerResult);
         System.out.println("Redeemer confirm credit successful!");
 
         // 1.3 blockchain: verfiy issue credit
@@ -55,24 +53,16 @@ public class IssueCreditExampleProtocol {
                 OwnerClient.makeCreditCredential(redeemerResult, secretKey);
 
         // (Optional) Upload regulation information to blockchain.
-        String regulationCurrentCredit =
-                Utils.protoToEncodedString(creditCredential.getCreditStorage().getCurrentCredit());
-        String regulationSpentCredit =
-                Utils.protoToEncodedString(creditCredential.getCreditStorage().getRootCredit());
-        IssueArgument issueArgument =
-                IssueArgument.parseFrom(Utils.stringToBytes(ownerResult.issueArgument));
-        String regulationRG = issueArgument.getRG();
-        byte[] regulationInfo =
-                RegulationInfo.newBuilder()
-                        .setNumericalValue(creditValue.getNumericalValue())
-                        .setStringValue(creditValue.getStringValue())
-                        .setBlindingRG(regulationRG)
-                        .build()
-                        .toByteArray();
-
         PublicKeyCrypto publicKeyCrypto = new PublicKeyCryptoExample();
+        String regulationCurrentCredit =
+                AssethidingUtils.makeRegulationCurrentCredit(creditCredential);
+        String regulationSpentCredit =
+                AssethidingUtils.makeRegulationIssueSpentCredit(creditCredential);
+        String regulationBlindingRG =
+                AssethidingUtils.makeIssueBlindingRG(ownerResult.issueArgument);
         String encryptedregulationInfo =
-                Utils.bytesToString(publicKeyCrypto.encrypt(regulatorPublicKey, regulationInfo));
+                AssethidingUtils.makeIssueRegulationInfo(
+                        publicKeyCrypto, regulatorPublicKey, creditValue, regulationBlindingRG);
         storageClient.insertRegulationInfo(
                 regulationCurrentCredit, regulationSpentCredit, encryptedregulationInfo);
 
