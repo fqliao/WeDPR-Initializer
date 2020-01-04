@@ -65,7 +65,7 @@ function parse_params() {
 }
 
 function main() {
-  [ -z $type ] && help 'ERROR: Please provide -t option to set auction type.'
+  [ -z $type ] && help 'ERROR: Please provide -t option to set voting type.'
   run
 }
 

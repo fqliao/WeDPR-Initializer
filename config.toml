@@ -1,6 +1,6 @@
 # Define the properties of the sensitive data under protection.
 [data]
-data_table_name_prefix = "wedpr-demo-table"
+data_table_name_prefix = ""
 
     # Control how the sensitive data will be stored.
     [data.storage]
