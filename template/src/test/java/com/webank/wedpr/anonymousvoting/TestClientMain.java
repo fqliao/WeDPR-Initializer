@@ -30,7 +30,7 @@ public class TestClientMain {
         try {
             while (votingTypeFlag) {
                 System.out.println(
-                        "Please input number to select voting type. 1: vote bounded, 2: vote unbounded");
+                        "Please input number to select voting type. 1:vote bounded, 2:vote unbounded");
                 params = UtilsForTest.tokenizeCommand(lineReader.readLine("> "));
                 if (params.length == 0) {
                     continue;
@@ -39,7 +39,7 @@ public class TestClientMain {
                     votingType = Integer.parseInt(params[0]);
                 } catch (NumberFormatException e) {
                     System.out.println(
-                            "Error: please provide voting type by integer mode from 0 to "
+                            "Error:please provide voting type by integer mode from 0 to "
                                     + Integer.MAX_VALUE
                                     + ".\n");
                     continue;
@@ -54,7 +54,7 @@ public class TestClientMain {
             boolean candidatesFlag = true;
             while (candidatesFlag) {
                 System.out.println("Please input candidates name list:");
-                System.out.println("Example: \"Alice\" \"Bob\" \"Kevin\"");
+                System.out.println("Example:\"Alice\" \"Bob\" \"Kevin\"");
                 params = UtilsForTest.tokenizeCommand(lineReader.readLine(votingType + "> "));
                 if (params.length == 0) {
                     continue;
@@ -63,7 +63,7 @@ public class TestClientMain {
                 for (String candidate : params) {
                     if (!(candidate.startsWith("\"") && candidate.endsWith("\""))) {
                         System.out.println(
-                                "Error: please provide double quote for each candidate name: "
+                                "Error:please provide double quote for each candidate name:"
                                         + candidate
                                         + "\n");
                         flag = false;
@@ -84,7 +84,7 @@ public class TestClientMain {
             boolean counterIdsFlag = true;
             while (counterIdsFlag) {
                 System.out.println("Please input counter id list:");
-                System.out.println("Example: \"100\" \"101\"");
+                System.out.println("Example:\"100\" \"101\"");
                 params = UtilsForTest.tokenizeCommand(lineReader.readLine(votingType + "> "));
                 if (params.length == 0) {
                     continue;
@@ -93,7 +93,7 @@ public class TestClientMain {
                 for (String counterId : params) {
                     if (!(counterId.startsWith("\"") && counterId.endsWith("\""))) {
                         System.out.println(
-                                "Error: please provide double quote for each counter id: "
+                                "Error:please provide double quote for each counter id:"
                                         + counterId
                                         + "\n");
                         flag = false;
@@ -114,11 +114,11 @@ public class TestClientMain {
             boolean voterCountFlag = true;
             while (voterCountFlag) {
                 System.out.println("Please input voter numbers:");
-                System.out.println("Example: 3");
+                System.out.println("Example:3");
                 params = UtilsForTest.tokenizeCommand(lineReader.readLine(votingType + "> "));
                 if (params.length == 0) {
                     System.out.println(
-                            "Error: please provide voter numbers by integer mode from 0 to "
+                            "Error:please provide voter numbers by integer mode from 0 to "
                                     + Integer.MAX_VALUE
                                     + ".\n");
                     continue;
@@ -127,7 +127,7 @@ public class TestClientMain {
                     voterCount = Integer.parseInt(params[0]);
                 } catch (NumberFormatException e) {
                     System.out.println(
-                            "Error: please provide voter numbers by integer mode from 0 to "
+                            "Error:please provide voter numbers by integer mode from 0 to "
                                     + Integer.MAX_VALUE
                                     + ".\n");
                     continue;
@@ -139,11 +139,11 @@ public class TestClientMain {
             boolean blankBallotsFlag = true;
             while (blankBallotsFlag) {
                 System.out.println("Please input blank ballot count for each voter:");
-                System.out.println("Example: 10 20 30");
+                System.out.println("Example:10 20 30");
                 params = UtilsForTest.tokenizeCommand(lineReader.readLine(votingType + "> "));
                 if (params.length != voterCount) {
                     System.out.println(
-                            "Error: please provide " + voterCount + " voter ballot count.\n");
+                            "Error:please provide " + voterCount + " voter ballot count.\n");
                     continue;
                 }
                 boolean flag = true;
@@ -153,7 +153,7 @@ public class TestClientMain {
                         blankBallot = Integer.parseInt(params[i]);
                     } catch (NumberFormatException e) {
                         System.out.println(
-                                "Error: please provide voter ballot count by integer mode from 0 to "
+                                "Error:please provide voter ballot count by integer mode from 0 to "
                                         + Integer.MAX_VALUE
                                         + ".\n");
                         flag = false;
@@ -172,13 +172,13 @@ public class TestClientMain {
                 for (int i = 0; i < voterCount; i++) {
                     System.out.println("Please input voter" + (i + 1) + " voting ballot count:");
                     if (i == 0) {
-                        System.out.println("Example for bounded: 1 2 3");
-                        System.out.println("Example for unbounded: 10 10 0");
+                        System.out.println("Example for bounded:1 2 3");
+                        System.out.println("Example for unbounded:10 10 0");
                     }
                     params = UtilsForTest.tokenizeCommand(lineReader.readLine(votingType + "> "));
                     if (params.length != candidates.size()) {
                         System.out.println(
-                                "Error: please provide " + candidates.size() + " voting ballot.\n");
+                                "Error:please provide " + candidates.size() + " voting ballot.\n");
                         i--;
                         continue;
                     }
@@ -190,7 +190,7 @@ public class TestClientMain {
                             votingBallot = Integer.parseInt(params[j]);
                         } catch (NumberFormatException e) {
                             System.out.println(
-                                    "Error: please provide voting ballot count by integer mode from 0 to "
+                                    "Error:please provide voting ballot count by integer mode from 0 to "
                                             + Integer.MAX_VALUE
                                             + ".\n");
                             flag = false;
@@ -203,7 +203,7 @@ public class TestClientMain {
                         int sumVotingBallots = Arrays.stream(votingBallots).sum();
                         if (sumVotingBallots > blankBallots[i]) {
                             System.out.println(
-                                    "Error: voting ballot sum "
+                                    "Error:voting ballot sum "
                                             + sumVotingBallots
                                             + " is greater than blank ballot sum "
                                             + blankBallots[i]
@@ -219,7 +219,7 @@ public class TestClientMain {
                                 continue;
                             } else {
                                 System.out.println(
-                                        "Error: voting ballot count "
+                                        "Error:voting ballot count "
                                                 + v
                                                 + " should be 0 or "
                                                 + blankBallots[i]
@@ -243,7 +243,7 @@ public class TestClientMain {
             boolean maxVoteNumberFlag = true;
             while (maxVoteNumberFlag) {
                 System.out.println("Please input max vote number to caculate ballot:");
-                System.out.println("Example: 1000");
+                System.out.println("Example:1000");
                 params = UtilsForTest.tokenizeCommand(lineReader.readLine(votingType + "> "));
                 if (params.length == 0) {
                     continue;
@@ -252,7 +252,7 @@ public class TestClientMain {
                     maxVoteNumber = Long.parseLong(params[0]);
                 } catch (NumberFormatException e) {
                     System.out.println(
-                            "Error: please provide voter count by integer mode from 0 to "
+                            "Error:please provide voter count by integer mode from 0 to "
                                     + Long.MAX_VALUE
                                     + ".\n");
                     continue;
@@ -260,7 +260,7 @@ public class TestClientMain {
                 int sumBlankBallots = Arrays.stream(blankBallots).sum();
                 if (maxVoteNumber < sumBlankBallots) {
                     System.out.println(
-                            "Error: please provide max vote number greater than the max blank ballots count "
+                            "Error:please provide max vote number greater than the max blank ballots count "
                                     + sumBlankBallots
                                     + ".\n");
                     continue;
@@ -286,7 +286,7 @@ public class TestClientMain {
                 DemoMain.doVoteUnbounded();
             } else {
                 System.out.println(
-                        "Error: please input 1 to select vote bounded or 2 to select vote unbounded.");
+                        "Error:please input 1 to select vote bounded or 2 to select vote unbounded.");
             }
             System.exit(0);
         } catch (Exception e) {

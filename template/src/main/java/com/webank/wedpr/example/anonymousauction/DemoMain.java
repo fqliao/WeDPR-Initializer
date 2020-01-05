@@ -52,12 +52,14 @@ public class DemoMain {
         if (args.length == 1) {
             if ("highest".equals(args[0])) {
                 doAuction(BidType.HighestPriceBid);
-            }
-            if ("lowest".equals(args[0])) {
+            } else if ("lowest".equals(args[0])) {
                 doAuction(BidType.LowestPriceBid);
+            } else {
+                System.out.println("Please provide one parameter, such as 'highest' or 'lowest'.");
+                System.exit(-1);
             }
         } else {
-            System.out.println("Please provide one parameter, such as 'high' or 'low'. ");
+            System.out.println("Please provide one parameter, such as 'highest' or 'lowest'.");
             System.exit(-1);
         }
 

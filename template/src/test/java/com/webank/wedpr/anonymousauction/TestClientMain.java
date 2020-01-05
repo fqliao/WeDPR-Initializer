@@ -27,7 +27,7 @@ public class TestClientMain {
         try {
             while (bidTypeFlag) {
                 System.out.println(
-                        "Please input number to select bid type. 1: highest bid, 2: lowest bid");
+                        "Please input number to select bid type. 1:highest bid, 2:lowest bid");
                 params = UtilsForTest.tokenizeCommand(lineReader.readLine("> "));
                 if (params.length == 0) {
                     continue;
@@ -36,7 +36,7 @@ public class TestClientMain {
                     bidType = Integer.parseInt(params[0]);
                 } catch (NumberFormatException e) {
                     System.out.println(
-                            "Error: please provide voting type by integer mode from 0 to "
+                            "Error:please provide voting type by integer mode from 0 to "
                                     + Integer.MAX_VALUE
                                     + ".\n");
                     continue;
@@ -51,7 +51,7 @@ public class TestClientMain {
             boolean bidderNumFlag = true;
             while (bidderNumFlag) {
                 System.out.println("Please input bidder numbers:");
-                System.out.println("Example: 3");
+                System.out.println("Example:3");
                 params = UtilsForTest.tokenizeCommand(lineReader.readLine(bidType + "> "));
                 if (params.length == 0) {
                     continue;
@@ -60,9 +60,9 @@ public class TestClientMain {
                     bidderNum = Integer.parseInt(params[0]);
                 } catch (NumberFormatException e) {
                     System.out.println(
-                            "Error: please provide voter numbers by integer mode from 0 to "
+                            "Error:please provide voter numbers from 0 to "
                                     + Integer.MAX_VALUE
-                                    + ".\n");
+                                    + " by integer mode.\n");
                     continue;
                 }
                 bidderNumFlag = false;
@@ -74,7 +74,7 @@ public class TestClientMain {
                 for (int i = 0; i < bidderNum; i++) {
                     System.out.println("Please input bidder" + (i + 1) + " bid value:");
                     if (i == 0) {
-                        System.out.println("Example: 10");
+                        System.out.println("Example:10");
                     }
                     params = UtilsForTest.tokenizeCommand(lineReader.readLine(bidType + "> "));
                     if (params.length == 0) {
@@ -88,7 +88,7 @@ public class TestClientMain {
                             bidValues[i] = bidValue;
                         } else {
                             System.out.println(
-                                    "Error: please provide bid value by integer mode from 0 to "
+                                    "Error:please provide bid value by integer mode from 0 to "
                                             + AuctionUtils.MAX_BID_VALUE
                                             + ".\n");
                             i--;
@@ -97,7 +97,7 @@ public class TestClientMain {
 
                     } catch (NumberFormatException e) {
                         System.out.println(
-                                "Error: please provide bid value by integer mode from 0 to "
+                                "Error:please provide bid value by integer mode from 0 to "
                                         + AuctionUtils.MAX_BID_VALUE
                                         + ".\n");
                         i--;
@@ -119,7 +119,7 @@ public class TestClientMain {
                 DemoMain.doAuction(BidType.LowestPriceBid);
             } else {
                 System.out.println(
-                        "Error: please input 1 to select highest price bid or 2 to select lowest price bid.");
+                        "Error:please input 1 to select highest price bid or 2 to select lowest price bid.");
             }
             System.exit(0);
         } catch (Exception e) {

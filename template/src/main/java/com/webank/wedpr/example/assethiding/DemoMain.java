@@ -53,9 +53,9 @@ public class DemoMain {
                 System.exit(-1);
             }
         } else {
-            // By default, the demo will run the following examples.
-            transferNumbericAsset();
-            splitNumbericAsset();
+            System.out.println(
+                    "Please provide one parameter, such as 'transferNumbericAsset' or 'transferNonnumericalAsset' or 'transferNonnumericalAsset'.");
+            System.exit(-1);
         }
         System.exit(0);
     }

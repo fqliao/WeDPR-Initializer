@@ -91,9 +91,9 @@ public class TestClientMain {
             switch (params[0]) {
                 case "issueCredit":
                     if (params.length < 3) {
-                        System.out.println("Error: please provide 3 parameters.");
-                        System.out.println("For example1: issueCredit A 100");
-                        System.out.println("For example2: issueCredit A \"a movie ticket\"\n");
+                        System.out.println("Error:please provide 3 parameters.");
+                        System.out.println("For example1:issueCredit A 100");
+                        System.out.println("For example2:issueCredit A \"a movie ticket\"\n");
                         break;
                     }
                     userName = params[1];
@@ -153,14 +153,14 @@ public class TestClientMain {
                             issueNumbericValue = Long.parseLong(params[2]);
                         } catch (NumberFormatException e1) {
                             System.out.println(
-                                    "Error: please provide value by integer mode from 0 to "
+                                    "Error:please provide value by integer mode from 0 to "
                                             + Long.MAX_VALUE
                                             + ".\n");
                             break;
                         }
                         if (issueNumbericValue <= 0) {
                             System.out.println(
-                                    "Error: please provide value by integer mode from 0 to "
+                                    "Error:please provide value by integer mode from 0 to "
                                             + Long.MAX_VALUE
                                             + ".\n");
                             break;
@@ -210,14 +210,14 @@ public class TestClientMain {
                     break;
                 case "fulfillCredit":
                     if (params.length < 3) {
-                        System.out.println("Error: please provide 3 parameters.");
-                        System.out.println("For example1: fulfillCredit A 100");
-                        System.out.println("For example2: fulfillCredit A \"a movie ticket\"\n");
+                        System.out.println("Error:please provide 3 parameters.");
+                        System.out.println("For example1:fulfillCredit A 100");
+                        System.out.println("For example2:fulfillCredit A \"a movie ticket\"\n");
                         break;
                     }
                     userName = params[1];
                     if (!userWallets.containsKey(userName)) {
-                        System.out.println("Error: " + userName + " does not have any credit.\n");
+                        System.out.println("Error:" + userName + " does not have any credit.\n");
                         break;
                     }
                     userWallet = userWallets.get(userName);
@@ -240,7 +240,7 @@ public class TestClientMain {
                                             .get();
                         } catch (NoSuchElementException e) {
                             System.out.println(
-                                    "Error: "
+                                    "Error:"
                                             + userName
                                             + " does not have '"
                                             + fulfillStringValue
@@ -270,14 +270,14 @@ public class TestClientMain {
                             fulfillNumbericValue = BigInteger.valueOf(Long.parseLong(params[2]));
                         } catch (NumberFormatException e1) {
                             System.out.println(
-                                    "Error: please provide value by integer mode from 0 to "
+                                    "Error:please provide value by integer mode from 0 to "
                                             + Long.MAX_VALUE
                                             + ".\n");
                             break;
                         }
                         if (fulfillNumbericValue.compareTo(BigInteger.ZERO) <= 0) {
                             System.out.println(
-                                    "Error: please provide value by integer mode from 0 to "
+                                    "Error:please provide value by integer mode from 0 to "
                                             + Long.MAX_VALUE
                                             + ".\n");
                             break;
@@ -298,7 +298,7 @@ public class TestClientMain {
                                             .get();
                         } catch (NoSuchElementException e) {
                             System.out.println(
-                                    "Error: "
+                                    "Error:"
                                             + userName
                                             + " does not have "
                                             + fulfillNumbericValue
@@ -331,9 +331,9 @@ public class TestClientMain {
                     break;
                 case "transferCredit":
                     if (params.length < 4) {
-                        System.out.println("Error: please provide at least 4 parameters.");
-                        System.out.println("For example1: transferCredit A B 100");
-                        System.out.println("For example2: transferCredit A B 100 \"computer\"\n");
+                        System.out.println("Error:please provide at least 4 parameters.");
+                        System.out.println("For example1:transferCredit A B 100");
+                        System.out.println("For example2:transferCredit A B 100 \"computer\"\n");
                         break;
                     }
                     String senderName = params[1];
@@ -344,7 +344,7 @@ public class TestClientMain {
                         message = params[4];
                     }
                     if (!userWallets.containsKey(senderName)) {
-                        System.out.println("Error: " + userName + " does not have any credit.\n");
+                        System.out.println("Error:" + userName + " does not have any credit.\n");
                         break;
                     }
                     byte[] receiverMasterSecret = null;
@@ -377,7 +377,7 @@ public class TestClientMain {
                                             .get();
                         } catch (NoSuchElementException e) {
                             System.out.println(
-                                    "Error: "
+                                    "Error:"
                                             + senderName
                                             + " does not have '"
                                             + transferStringValue
@@ -446,14 +446,14 @@ public class TestClientMain {
                             transferNumbericValue = BigInteger.valueOf(Long.parseLong(value));
                         } catch (NumberFormatException e1) {
                             System.out.println(
-                                    "Error: please provide value by integer mode from 0 to "
+                                    "Error:please provide value by integer mode from 0 to "
                                             + Long.MAX_VALUE
                                             + ".\n");
                             break;
                         }
                         if (transferNumbericValue.compareTo(BigInteger.ZERO) <= 0) {
                             System.out.println(
-                                    "Error: please provide value by integer mode from 0 to "
+                                    "Error:please provide value by integer mode from 0 to "
                                             + Long.MAX_VALUE
                                             + ".\n");
                             break;
@@ -474,7 +474,7 @@ public class TestClientMain {
                                             .get();
                         } catch (NoSuchElementException e) {
                             System.out.println(
-                                    "Error: "
+                                    "Error:"
                                             + senderName
                                             + " does not have "
                                             + longTransferValue
@@ -553,9 +553,9 @@ public class TestClientMain {
                     break;
                 case "splitCredit":
                     if (params.length < 4) {
-                        System.out.println("Error: please provide at least 4 parameters.");
-                        System.out.println("For example1: splitCredit A B 60");
-                        System.out.println("For example2: splitCredit A B 60 \"blockchain\"\n");
+                        System.out.println("Error:please provide at least 4 parameters.");
+                        System.out.println("For example1:splitCredit A B 60");
+                        System.out.println("For example2:splitCredit A B 60 \"blockchain\"\n");
                         break;
                     }
                     senderName = params[1];
@@ -566,7 +566,7 @@ public class TestClientMain {
                         message = params[4];
                     }
                     if (!userWallets.containsKey(senderName)) {
-                        System.out.println("Error: " + userName + " does not have any credit.\n");
+                        System.out.println("Error:" + userName + " does not have any credit.\n");
                         break;
                     }
                     if (!userWallets.containsKey(receiverName)) {
@@ -584,14 +584,14 @@ public class TestClientMain {
                         splitNumbericValue = BigInteger.valueOf(Long.parseLong(value));
                     } catch (NumberFormatException e1) {
                         System.out.println(
-                                "Error: please provide value by integer mode from 0 to "
+                                "Error:please provide value by integer mode from 0 to "
                                         + Long.MAX_VALUE
                                         + ".\n");
                         break;
                     }
                     if (splitNumbericValue.compareTo(BigInteger.ZERO) <= 0) {
                         System.out.println(
-                                "Error: please provide value by integer mode from 0 to "
+                                "Error:please provide value by integer mode from 0 to "
                                         + Long.MAX_VALUE
                                         + ".\n");
                         break;
@@ -612,7 +612,7 @@ public class TestClientMain {
                                         .get();
                     } catch (NoSuchElementException e) {
                         System.out.println(
-                                "Error: "
+                                "Error:"
                                         + senderName
                                         + " does not have greater than "
                                         + longSplitValue
@@ -702,13 +702,13 @@ public class TestClientMain {
                     break;
                 case "queryCredit":
                     if (params.length < 2) {
-                        System.out.println("Error: please provide 2 parameters.");
-                        System.out.println("For example: queryCredit A\n");
+                        System.out.println("Error:please provide 2 parameters.");
+                        System.out.println("For example:queryCredit A\n");
                         break;
                     }
                     userName = params[1];
                     if (!userWallets.containsKey(userName)) {
-                        System.out.println("Error: " + userName + " does not have any credit.\n");
+                        System.out.println("Error:" + userName + " does not have any credit.\n");
                         break;
                     }
                     userWallet = userWallets.get(userName);
@@ -725,7 +725,7 @@ public class TestClientMain {
                 case "exit":
                     System.exit(0);
                 default:
-                    System.out.println("Error: the command " + params[0] + " does not exist.\n");
+                    System.out.println("Error:the command " + params[0] + " does not exist.\n");
                     break;
             }
         }

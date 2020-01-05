@@ -91,13 +91,16 @@ public class DemoMain {
         if (args.length == 1) {
             if ("voteBounded".equals(args[0])) {
                 doVoteBounded();
-            }
-            if ("voteUnbounded".equals(args[0])) {
+            } else if ("voteUnbounded".equals(args[0])) {
                 doVoteUnbounded();
+            } else {
+                System.out.println(
+                        "Please provide one parameter, such as 'voteBounded' or 'voteUnbounded'.");
+                System.exit(-1);
             }
         } else {
             System.out.println(
-                    "Please provide one parameter, such as 'voteBounded' or 'voteUnbounded'. ");
+                    "Please provide one parameter, such as 'voteBounded' or 'voteUnbounded'.");
             System.exit(-1);
         }
         System.exit(0);
