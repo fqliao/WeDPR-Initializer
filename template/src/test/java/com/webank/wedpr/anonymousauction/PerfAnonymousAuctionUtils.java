@@ -1,6 +1,7 @@
 package com.webank.wedpr.anonymousauction;
 
 import com.webank.wedpr.anonymousauction.proto.AllBidStorageRequest;
+import com.webank.wedpr.anonymousauction.proto.AuctionItem;
 import com.webank.wedpr.anonymousauction.proto.BidComparisonResponse;
 import com.webank.wedpr.anonymousauction.proto.BidStorage;
 import com.webank.wedpr.anonymousauction.proto.BidderState;
@@ -68,8 +69,10 @@ public class PerfAnonymousAuctionUtils {
             bidderStateList.add(bidderState);
         }
 
-        // 3. Coordinator upload bid type to blockchain
-        storageClient.uploadBidType(BidType.HighestPriceBid);
+        // 3. Coordinator upload auction info to blockchain
+        AuctionItem auctionItem =
+                AuctionUtils.makeAuctionItem(DemoMain.title, DemoMain.description);
+        storageClient.uploadAuctionInfo(BidType.HighestPriceBid, auctionItem);
 
         // 4 Bidder register
         List<String> registrationRequestList = new ArrayList<>();
@@ -126,7 +129,13 @@ public class PerfAnonymousAuctionUtils {
         }
 
         // 7 Query bidStorage
-        List<BidStorage> bidStorageList = storageClient.queryAllBidStorage();
+        List<String> bidderIds = storageClient.queryAllBidderId();
+        int size = bidderIds.size();
+        List<BidStorage> bidStorageList = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            BidStorage bidStorage = storageClient.queryBidStorageByBidderId(bidderIds.get(i));
+            bidStorageList.add(bidStorage);
+        }
         AllBidStorageRequest allBidStorageRequest =
                 AuctionUtils.makeAllBidStorageRequest(bidStorageList);
 
@@ -165,17 +174,23 @@ public class PerfAnonymousAuctionUtils {
         List<BidderState> bidderStateList = uploadBidComparisonStorageParams.bidderStateList;
         List<String> bidComparisonRequestList =
                 uploadBidComparisonStorageParams.bidComparisonRequestList;
-        List<String> uuidList = uploadBidComparisonStorageParams.bidderIdList;
+        List<String> bidderIdList = uploadBidComparisonStorageParams.bidderIdList;
 
         for (int i = 0; i < DemoMain.bidderNum; i++) {
             storageClient.uploadBidComparisonStorage(
-                    uuidList.get(i), bidComparisonRequestList.get(i));
+                    bidderIdList.get(i), bidComparisonRequestList.get(i));
         }
         // Contract State: Bidding -> Claiming
         storageClient.nextContractState();
 
         // 9 Bidder claim winner
-        List<String> bidComparisonStorageList = storageClient.queryAllBidComparisonStorage();
+        int size = bidderIdList.size();
+        List<String> bidComparisonStorageList = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            String bidComparisonStorage =
+                    storageClient.queryBidComparisonStorageByBidderId(bidderIdList.get(i));
+            bidComparisonStorageList.add(bidComparisonStorage);
+        }
         BidComparisonResponse bidComparisonResponse =
                 AuctionUtils.makeBidComparisonResponse(bidComparisonStorageList);
         String winnerClaimRequest = null;

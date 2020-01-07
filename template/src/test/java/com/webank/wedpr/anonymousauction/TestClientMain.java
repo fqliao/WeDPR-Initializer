@@ -47,6 +47,13 @@ public class TestClientMain {
                 bidTypeFlag = false;
             }
             System.out.println();
+            System.out.println(
+                    "Auction Item {title:"
+                            + DemoMain.title
+                            + ", description:"
+                            + DemoMain.description
+                            + "}");
+            System.out.println();
             int bidderNum = 0;
             boolean bidderNumFlag = true;
             while (bidderNumFlag) {

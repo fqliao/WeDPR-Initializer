@@ -7,6 +7,7 @@ import com.webank.wedpr.anonymousauction.BidderKeyPair;
 import com.webank.wedpr.anonymousauction.BidderResult;
 import com.webank.wedpr.anonymousauction.CoordinatorClient;
 import com.webank.wedpr.anonymousauction.proto.AllBidStorageRequest;
+import com.webank.wedpr.anonymousauction.proto.AuctionItem;
 import com.webank.wedpr.anonymousauction.proto.BidComparisonResponse;
 import com.webank.wedpr.anonymousauction.proto.BidStorage;
 import com.webank.wedpr.anonymousauction.proto.BidderState;
@@ -28,19 +29,22 @@ public class DemoMain {
     public static String bidderIdTableName = "bidderId_";
     public static String regulationInfoTableName = "regulation_info_";
 
+    public static String title = "car";
+    public static String description = "BMW X5";
     public static int bidderNum = 3;
-    public static int[] bidValues = {100, 101, 102};
-    //    public static int[] bidValues = new int[bidderNum];
+    public static int[] bidValues = {50, 60, 70};
 
     public static byte[] regulatorSecretKey;
     public static byte[] regulatorPublicKey;
     public static PublicKeyCrypto publicKeyCrypto;
 
-    //    static {
-    //        for (int i = 1; i <= bidderNum; i++) {
-    //            bidValues[i - 1] = i;
+    // Test n bidder
+    //  public static int[] bidValues = new int[bidderNum];
+    //        static {
+    //            for (int i = 1; i <= bidderNum; i++) {
+    //                bidValues[i - 1] = i;
+    //            }
     //        }
-    //    }
 
     public static void main(String[] args) throws Exception {
         // (Optional) Regulator init keypair.
@@ -91,10 +95,18 @@ public class DemoMain {
             bidderStateList.add(bidderState);
         }
 
-        // 3. Coordinator upload bid type to blockchain
-        storageClient.uploadBidType(bidType);
+        // 3. Coordinator upload auction info to blockchain
+        AuctionItem auctionItem = AuctionUtils.makeAuctionItem(title, description);
+        storageClient.uploadAuctionInfo(bidType, auctionItem);
+        System.out.println();
         System.out.println("Bid type:" + bidType);
-
+        System.out.println(
+                "Auction Item {title:"
+                        + DemoMain.title
+                        + ", description:"
+                        + DemoMain.description
+                        + "}");
+        System.out.println();
         // 4 Bidder register
         List<String> registrationRequestList = new ArrayList<>();
         for (int i = 0; i < bidderNum; i++) {
@@ -136,7 +148,13 @@ public class DemoMain {
         }
 
         // 7 Query bidStorage
-        List<BidStorage> bidStorageList = storageClient.queryAllBidStorage();
+        List<String> bidderIds = storageClient.queryAllBidderId();
+        int size = bidderIds.size();
+        List<BidStorage> bidStorageList = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            BidStorage bidStorage = storageClient.queryBidStorageByBidderId(bidderIds.get(i));
+            bidStorageList.add(bidStorage);
+        }
         AllBidStorageRequest allBidStorageRequest =
                 AuctionUtils.makeAllBidStorageRequest(bidStorageList);
 
@@ -156,7 +174,12 @@ public class DemoMain {
         storageClient.nextContractState();
 
         // 9 Bidder claim winner
-        List<String> bidComparisonStorageList = storageClient.queryAllBidComparisonStorage();
+        List<String> bidComparisonStorageList = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            String bidComparisonStorage =
+                    storageClient.queryBidComparisonStorageByBidderId(bidderIds.get(i));
+            bidComparisonStorageList.add(bidComparisonStorage);
+        }
         BidComparisonResponse bidComparisonResponse =
                 AuctionUtils.makeBidComparisonResponse(bidComparisonStorageList);
         for (int i = 0; i < bidderNum; i++) {

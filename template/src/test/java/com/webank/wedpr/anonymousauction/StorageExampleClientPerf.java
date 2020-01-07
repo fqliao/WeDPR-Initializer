@@ -1,13 +1,13 @@
 package com.webank.wedpr.anonymousauction;
 
 import com.webank.wedpr.anonymousauction.proto.AllBidStorageRequest;
+import com.webank.wedpr.anonymousauction.proto.AuctionItem;
 import com.webank.wedpr.anonymousauction.proto.BidStorage;
 import com.webank.wedpr.anonymousauction.proto.SystemParametersStorage;
 import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.common.WedprException;
 import com.webank.wedpr.example.anonymousauction.BidWinner;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.fisco.bcos.web3j.tuples.generated.Tuple2;
@@ -134,20 +134,42 @@ public class StorageExampleClientPerf {
     }
 
     /**
-     * Uploads BidType
+     * Uploads auction info
      *
      * @param bidType
+     * @param auctionInfo
      * @throws Exception
      */
-    public void uploadBidType(BidType bidType) throws Exception {
+    public void uploadAuctionInfo(BidType bidType, AuctionItem auctionInfo) throws Exception {
         TransactionReceipt transactionReceipt =
-                anonymousAuction.uploadBidType(BigInteger.valueOf(bidType.ordinal())).send();
+                anonymousAuction
+                        .uploadAuctionInfo(
+                                BigInteger.valueOf(bidType.ordinal()),
+                                Utils.protoToEncodedString(auctionInfo))
+                        .send();
         Utils.checkTranactionReceipt(transactionReceipt);
     }
 
+    /**
+     * Queries bidType
+     *
+     * @return
+     * @throws Exception
+     */
     public BidType queryBidType() throws Exception {
         BigInteger bidType = anonymousAuction.bidType().send();
         return BidType.getBidType(bidType);
+    }
+
+    /**
+     * Queries auctionItem
+     *
+     * @return
+     * @throws Exception
+     */
+    public AuctionItem queryAutionItem() throws Exception {
+        String auctionItem = anonymousAuction.autionItem().send();
+        return AuctionItem.parseFrom(Utils.stringToBytes(auctionItem));
     }
 
     /**
@@ -166,52 +188,40 @@ public class StorageExampleClientPerf {
     }
 
     /**
-     * Queries bidComparisionStorage by bidStorage.
+     * Queries bidComparisonStorage by bidderId
      *
-     * @param bidStorage
+     * @param bidderId
      * @return
      * @throws Exception
      */
-    public String queryBidComparisonStorage(String bidStorage) throws Exception {
-        List<String> bidComparisonStorages =
-                anonymousAuction.queryBidComparisonStorage(bidStorage).send();
-        if (bidComparisonStorages.isEmpty()) {
-            throw new WedprException("Empty set.");
-        }
-        return bidComparisonStorages.get(0);
+    public String queryBidComparisonStorageByBidderId(String bidderId) throws Exception {
+        return anonymousAuction.queryBidComparisonStorageByBidderId(bidderId).send();
     }
 
     /**
-     * Queries all bidComparisionStorage.
+     * Queries bidStorage by bidderId
      *
+     * @param bidderId
      * @return
      * @throws Exception
      */
-    public List<String> queryAllBidComparisonStorage() throws Exception {
-        List<String> bidComparisonStorages = anonymousAuction.queryAllBidComparisonStorage().send();
-        if (bidComparisonStorages.isEmpty()) {
-            throw new WedprException("Empty set.");
-        }
-        return bidComparisonStorages;
+    public BidStorage queryBidStorageByBidderId(String bidderId) throws Exception {
+        return BidStorage.parseFrom(
+                Utils.stringToBytes(anonymousAuction.queryBidStorageByBidderId(bidderId).send()));
     }
 
     /**
-     * Queries all bid info.
+     * Queries all BidderId
      *
      * @return
      * @throws Exception
      */
-    public List<BidStorage> queryAllBidStorage() throws Exception {
-        List<String> allBidStorages = anonymousAuction.queryAllBidStorage().send();
-        if (allBidStorages.isEmpty()) {
+    public List<String> queryAllBidderId() throws Exception {
+        List<String> bidderIds = anonymousAuction.queryAllBidderId().send();
+        if (bidderIds.isEmpty()) {
             throw new WedprException("Empty set.");
         }
-        int size = allBidStorages.size();
-        List<BidStorage> allBidStorageList = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            allBidStorageList.add(BidStorage.parseFrom(Utils.stringToBytes(allBidStorages.get(i))));
-        }
-        return allBidStorageList;
+        return bidderIds;
     }
 
     /**
