@@ -35,6 +35,7 @@ jobs:
       - run:
           name: run wedpr_initializer.py
           command: |
+            sed -i 's|offline_resource_path = "./resources"|# offline_resource_path = "./resources"|g' ./config.toml
             python3 ./initializer.py
       # run integration test for sdk
       - run:
@@ -72,7 +73,12 @@ jobs:
           command: |
             curl -LO https://github.com/WeDPR/TestBinary/releases/download/v0.1/mini-wedpr-fisco-bcos.tar.gz
             tar -zxf ./mini-wedpr-fisco-bcos.tar.gz
-            curl -LO https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK.jar
+            curl -LO https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK-anonymous-auction.jar
+            curl -LO https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK-anonymous-voting.jar
+            curl -LO https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK-asset-hiding.jar
+            curl -LO https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK-selective-disclosure.jar
+            curl -LO https://github.com/WeDPR/TestBinary/releases/download/v0.1/linux_WeDPR_dynamic_lib.tar.gz
+            tar -zxf linux_WeDPR_dynamic_lib.tar.gz
       - run:
           name: run wedpr_initializer.py
           command: |
@@ -80,8 +86,8 @@ jobs:
             # chmod u+x ./fisco-bcos
             ./fisco-bcos -v
             cp fisco-bcos ./resources
-            cp WeDPR-Java-SDK.jar ./resources
-            sed -i 's|# offline_resource_path = "./resources"|offline_resource_path = "./resources"|g' ./config.toml
+            cp *.jar ./resources
+            cp -r ./WeDPR_dynamic_lib ./resources
             python3 ./initializer.py
       # run integration test for sdk
       - run:
@@ -94,9 +100,6 @@ jobs:
             bash ./nodes/127.0.0.1/start_all.sh
             ps -ef | grep fisco
             cd ./WeDPR-Client
-            curl -LO https://github.com/WeDPR/TestBinary/releases/download/v0.1/linux_WeDPR_dynamic_lib.tar.gz
-            tar -zxf linux_WeDPR_dynamic_lib.tar.gz
-            cp -r ./WeDPR_dynamic_lib src/main/resources/WeDPR_dynamic_lib
             bash gradlew build --info
             bash gradlew test --info
 workflows:

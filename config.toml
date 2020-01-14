@@ -1,6 +1,5 @@
 # Define the properties of the sensitive data under protection.
 [data]
-data_table_name_prefix = ""
 
     # Control how the sensitive data will be stored.
     [data.storage]
@@ -8,7 +7,7 @@ data_table_name_prefix = ""
     storage_controller_type = "smart-contract.solidity"
 
 [resource-generation]
-# offline_resource_path = "./resources"
+offline_resource_path = "./resources"
 
     # Control which langauge will be used in the generated code templates.
     [resource-generation.output]

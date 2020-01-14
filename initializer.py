@@ -164,26 +164,26 @@ def dir_must_not_exists(_dir):
         sys.exit(1)
 
 
-def replace(filepath, old, new):
-    """[replace old string to new from filepath]
+# def replace(filepath, old, new):
+#     """[replace old string to new from filepath]
 
-    Arguments:
-        filepath {[path]} -- [file path that needs to be replaced]
-        old {[string]} -- [old string]
-        new {[string]} -- [new string]
-    """
-    if not os.path.exists(filepath):
-        return False
+#     Arguments:
+#         filepath {[path]} -- [file path that needs to be replaced]
+#         old {[string]} -- [old string]
+#         new {[string]} -- [new string]
+#     """
+#     if not os.path.exists(filepath):
+#         return False
 
-    cmd = "sed -i 's|%s|%s|g' %s " % (old, new, filepath)
+#     cmd = "sed -i 's|%s|%s|g' %s " % (old, new, filepath)
 
-    status, output = getstatusoutput(cmd)
-    if status != 0:
-        print(' replace failed,'
-              'new is %s, old is %s, file is %s, status is %s, output is %s ' % (
-                  new, old, filepath, str(status), output))
-        return False
-    return True
+#     status, output = getstatusoutput(cmd)
+#     if status != 0:
+#         print(' replace failed,'
+#               'new is %s, old is %s, file is %s, status is %s, output is %s ' % (
+#                   new, old, filepath, str(status), output))
+#         return False
+#     return True
 
 def check_state(cfg):
     storage_type = cfg['data']['storage']['adapter_type']
@@ -208,7 +208,8 @@ if __name__ == "__main__":
     print("config path is %s" % abs_path)
     cfg = init()
     check_state(cfg)
-    table_name = cfg['data']['data_table_name_prefix']
+    # table_name = cfg['data']['data_table_name_prefix']
+    offline_resource_path = ""
 
     anonymous_voting = cfg['resource-generation']['workflow']['anonymous_voting']['enabled']
     anonymous_auction = cfg['resource-generation']['workflow']['hidden_asset']['enabled']
@@ -218,37 +219,50 @@ if __name__ == "__main__":
     print("anonymous_auction = {}".format(anonymous_auction))
     print("selective_disclosure = {}".format(selective_disclosure))
     print("hidden_asset_enable = {}".format(hidden_asset))
-    print("table_name_prefix = {}".format(table_name))
+    # print("table_name_prefix = {}".format(table_name))
     app_output_path = cfg['resource-generation']['output']['app_output_path']
+    client_path = "{}/WeDPR-Client".format(app_output_path)
+    console_path = "{}/WeDPR-Console".format(app_output_path)
     dir_must_not_exists(app_output_path)
     os.mkdir(app_output_path)
-    shutil.copytree("./template",
-                    "{}/WeDPR-Client".format(app_output_path))
+    shutil.copytree("./template/client",
+                    "{}".format(client_path))
+    shutil.copytree("./template/console",
+                    "{}".format(console_path))
+                    
 
     if 'offline_resource_path' in cfg['resource-generation']:
         offline_resource_path = cfg['resource-generation']['offline_resource_path']
         print("try to use resource in %s" % offline_resource_path)
-        # dir_must_exists("{}/WeDPR-Java-SDK".format(offline_resource_path))
         file_must_exists("{}/fisco-bcos".format(offline_resource_path))
-        file_must_exists("{}/WeDPR-Java-SDK.jar".format(offline_resource_path))
-        # shutil.copytree("{}/WeDPR-Java-SDK".format(offline_resource_path), "{}/WeDPR-Client".format(app_output_path))
         shutil.copy("{}/fisco-bcos".format(offline_resource_path),
                         "{}/fisco-bcos".format(app_output_path))
-        shutil.copy("{}/WeDPR-Java-SDK.jar".format(offline_resource_path),
-                        "{}/WeDPR-Client/lib/WeDPR-Java-SDK.jar".format(app_output_path))
-        # shutil.copyfile("{}/fisco-bcos".format(offline_resource_path),
-        #                 "{}/fisco-bcos".format(app_output_path))
-        # shutil.copyfile("{}/WeDPR-Java-SDK.jar".format(offline_resource_path),
-        #                 "{}/WeDPR-Client/lib/WeDPR-Java-SDK.jar".format(app_output_path))
+        dynamic_lib = '{}/WeDPR_dynamic_lib'.format(
+            offline_resource_path)
+        shutil.copytree("{}".format(dynamic_lib),
+                        "{}/src/main/resources/WeDPR_dynamic_lib/".format(client_path))
+        shutil.copytree("{}".format(dynamic_lib),
+                        "{}/conf/WeDPR_dynamic_lib/".format(console_path))
+
     else:
-        wedpr_jar_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK.jar'
+        lib_download_link = "https://github.com/WeDPR/TestBinary/releases/download/v0.1/linux_WeDPR_dynamic_lib.tar.gz"
+        lib_name = "linux_WeDPR_dynamic_lib.tar.tar.gz"
+        print("download linux_WeDPR_dynamic_lib...")
+        download_bin(lib_download_link, lib_name)
+        (status, result)\
+            = getstatusoutput('tar -zxf {} -C {}/src/main/resources/WeDPR_dynamic_lib/ && '.format(lib_name,
+                                             client_path,
+                                             ))
+        print(result)
+        (status, result)\
+            = getstatusoutput('tar -zxf {} -C {}/conf/WeDPR_dynamic_lib/ && '
+                              'rm {}'.format(lib_name,
+                                             client_path,
+                                             lib_name))
+        print(result)
         node_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/mini-wedpr-fisco-bcos.tar.gz'
         node_name = "mini-wedpr-fisco-bcos.tar.gz"
-        print("download WeDPR-Java-SDK.jar...")
-        download_bin(wedpr_jar_download_link, "WeDPR-Java-SDK.jar")
-        shutil.move("./WeDPR-Java-SDK.jar",
-                    "{}/WeDPR-Client/lib/WeDPR-Java-SDK.jar".format(app_output_path))
-        print("WeDPR fisco-bcos blockchain node...")
+        print("download WeDPR fisco-bcos blockchain node...")
         download_bin(node_download_link, node_name)
         (status, result)\
             = getstatusoutput('tar -zxf {} -C ./{} && '
@@ -257,50 +271,116 @@ if __name__ == "__main__":
                                              node_name))
         print(result)
 
-    client_path = "{}/WeDPR-Client".format(app_output_path)
     if anonymous_voting:
         vote_table_file = '{}/src/main/java/com/webank/wedpr/example/anonymousvoting/DemoMain.java'.format(
             client_path)
         file_must_exists(vote_table_file)
-        replace(vote_table_file, '"voter_"',
-                '"{}_voter_"'.format(table_name))
-        replace(vote_table_file, '"counter_"',
-                '"{}_counter_"'.format(table_name))
-        replace(vote_table_file, '"regulation_info_"',
-                '"{}_regulation_info_"'.format(table_name))
+        
+        anonymous_voting_jar = '{}/WeDPR-Java-SDK-anonymous-voting.jar'.format(
+            offline_resource_path)
+        if os.path.exists(anonymous_voting_jar) and os.path.isfile(anonymous_voting_jar):
+            shutil.copy("{}".format(anonymous_voting_jar),
+                        "{}/lib/WeDPR-Java-SDK-anonymous-voting.jar".format(client_path))
+            shutil.copy("{}".format(anonymous_voting_jar),
+                        "{}/conf/WeDPR-Java-SDK-anonymous-voting.jar".format(console_path))
+        else:
+            jar_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK-anonymous-voting.jar'
+            name = "WeDPR-Java-SDK-anonymous-voting.jar"
+            download_bin(jar_download_link, name)
+            shutil.copy("./WeDPR-Java-SDK-anonymous-voting.jar",
+                    "{}/lib/WeDPR-Java-SDK-anonymous-voting.jar".format(client_path))
+            shutil.move("./WeDPR-Java-SDK-anonymous-voting.jar",
+                    "{}/conf/WeDPR-Java-SDK-anonymous-voting.jar".format(console_path))
+
     else:
         shutil.rmtree(
             '{}/src/main/java/com/webank/wedpr/example/anonymousvoting'.format(client_path))
         shutil.rmtree(
             '{}/src/test/java/com/webank/wedpr/anonymousvoting'.format(client_path))
+        os.remove(
+            '{}/tools/run_anonymous_voting_client.sh'.format(console_path))
+
     if hidden_asset:
         asset_table_file = '{}/src/main/java/com/webank/wedpr/example/assethiding/DemoMain.java'.format(
             client_path)
         file_must_exists(asset_table_file)
-        replace(asset_table_file, 'hidden_asset_example',
-                '{}_hidden_asset'.format(table_name))
-        replace(asset_table_file, 'hidden_asset_regulation_info_example',
-                '{}_hidden_asset_regulation_info'.format(table_name))
+        
+        hidden_asset_jar = '{}/WeDPR-Java-SDK-asset-hiding.jar'.format(
+            offline_resource_path)
+        if os.path.exists(hidden_asset_jar) and os.path.isfile(hidden_asset_jar):
+            shutil.copy("{}".format(hidden_asset_jar),
+                        "{}/lib/WeDPR-Java-SDK-asset-hiding.jar".format(client_path))
+            shutil.copy("{}".format(hidden_asset_jar),
+                        "{}/conf/WeDPR-Java-SDK-asset-hiding.jar".format(console_path))
+        else:
+            jar_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK-asset-hiding.jar'
+            name = "WeDPR-Java-SDK-asset-hiding.jar"
+            download_bin(jar_download_link, name)
+            shutil.copy("./WeDPR-Java-SDK-asset-hiding.jar",
+                    "{}/lib/WeDPR-Java-SDK-asset-hiding.jar".format(client_path))
+            shutil.move("./WeDPR-Java-SDK-asset-hiding.jar",
+                    "{}/conf/WeDPR-Java-SDK-asset-hiding.jar".format(console_path))
     else:
         shutil.rmtree(
             '{}/src/main/java/com/webank/wedpr/example/assethiding'.format(client_path))
         shutil.rmtree(
             '{}/src/test/java/com/webank/wedpr/assethiding'.format(client_path))
-    if not selective_disclosure:
-        shutil.rmtree(
-            '{}/src/main/java/com/webank/wedpr/example/selectivedisclosure'.format(client_path))
+        os.remove(
+            '{}/run_hidden_asset_client.sh'.format(console_path))
+
     if anonymous_auction:
         anonymous_auction_table_file = '{}/src/main/java/com/webank/wedpr/example/anonymousauction/DemoMain.java'.format(
             client_path)
         file_must_exists(anonymous_auction_table_file)
-        replace(anonymous_auction_table_file, 'bidder_',
-                '{}_bidder'.format(table_name))
-        replace(anonymous_auction_table_file, 'regulation_info_',
-                '{}_bidder_regulation_info'.format(table_name))
+        
+        anonymous_auction_jar = '{}/WeDPR-Java-SDK-anonymous-auction.jar'.format(
+            offline_resource_path)
+        if os.path.exists(anonymous_auction_jar) and os.path.isfile(anonymous_auction_jar):
+            shutil.copy("{}".format(anonymous_auction_jar),
+                        "{}/lib/WeDPR-Java-SDK-anonymous-auction.jar".format(client_path))
+            shutil.copy("{}".format(anonymous_auction_jar),
+                        "{}/conf/WeDPR-Java-SDK-anonymous-auction.jar".format(console_path))
+        else:
+            jar_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK-anonymous-auction.jar'
+            name = "WeDPR-Java-SDK-anonymous-auction.jar"
+            download_bin(jar_download_link, name)
+            shutil.copy("./WeDPR-Java-SDK-anonymous-auction.jar",
+                    "{}/lib/WeDPR-Java-SDK-anonymous-auction.jar".format(client_path))
+            shutil.move("./WeDPR-Java-SDK-anonymous-auction.jar",
+                    "{}/conf/WeDPR-Java-SDK-anonymous-auction.jar".format(console_path))
     else:
         shutil.rmtree(
             '{}/src/main/java/com/webank/wedpr/example/anonymousauction'.format(client_path))
+        shutil.rmtree(
+            '{}/src/test/java/com/webank/wedpr/anonymousauction'.format(client_path))
+        os.remove(
+            '{}/run_anonymous_auction_client.sh'.format(console_path))
 
+
+    if selective_disclosure:
+        selective_disclosure_jar = '{}/WeDPR-Java-SDK-selective-disclosure.jar'.format(
+            offline_resource_path)
+        if os.path.exists(selective_disclosure_jar) and os.path.isfile(selective_disclosure_jar):
+            shutil.copy("{}".format(selective_disclosure_jar),
+                        "{}/lib/WeDPR-Java-SDK-selective-disclosure.jar".format(client_path))
+            shutil.copy("{}".format(selective_disclosure_jar),
+                        "{}/conf/WeDPR-Java-SDK-selective-disclosure.jar".format(console_path))
+        else:
+            jar_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK-selective-disclosure.jar'
+            name = "WeDPR-Java-SDK-selective-disclosure.jar"
+            download_bin(jar_download_link, name)
+            shutil.copy("./WeDPR-Java-SDK-selective-disclosure.jar",
+                    "{}/lib/WeDPR-Java-SDK-selective-disclosure.jar".format(client_path))
+            shutil.move("./WeDPR-Java-SDK-asset-hiding.jar",
+                    "{}/conf/WeDPR-Java-SDK-selective-disclosure.jar".format(console_path))
+    else:
+        shutil.rmtree(
+            '{}/src/main/java/com/webank/wedpr/example/selectivedisclosure'.format(client_path))
+        shutil.rmtree(
+            '{}/src/test/java/com/webank/wedpr/selectivedisclosure'.format(client_path))
+        os.remove(
+            '{}/run_selective_disclosure_client.sh'.format(console_path))
+            
     (status, result)\
         = getstatusoutput('bash ./scripts/build_chain.sh -l "127.0.0.1:4" -p 30300,20200,8545 -e {}/fisco-bcos -o {}/nodes'.format(app_output_path, app_output_path))
     print(result)
@@ -314,3 +394,12 @@ if __name__ == "__main__":
                 '{}/src/main/resources/sdk.key'.format(client_path))
     shutil.copy('{}/src/main/resources/applicationContext-example.xml'.format(client_path),
                 '{}/src/main/resources/applicationContext.xml'.format(client_path))
+
+    shutil.copy("{}/nodes/127.0.0.1/sdk/ca.crt".format(app_output_path),
+                '{}/conf/ca.crt'.format(console_path))
+    shutil.copy("{}/nodes/127.0.0.1/sdk/sdk.crt".format(app_output_path),
+                '{}/conf/sdk.crt'.format(console_path))
+    shutil.copy("{}/nodes/127.0.0.1/sdk/sdk.key".format(app_output_path),
+                '{}/conf/sdk.key'.format(console_path))
+    shutil.copy('{}/conf/applicationContext-example.xml'.format(console_path),
+                '{}/conf/applicationContext.xml'.format(console_path))

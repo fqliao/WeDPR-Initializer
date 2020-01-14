@@ -159,7 +159,7 @@ fi
 
 print_result()
 {
-echo "================================================================"
+echo "=============================================================="
 [ -z ${docker_mode} ] && [ -f "${bin_path}" ] && LOG_INFO "FISCO-BCOS Path   : $bin_path"
 [ ! -z ${docker_mode} ] && LOG_INFO "Docker tag        : latest"
 [ ! -z $ip_file ] && LOG_INFO "IP List File      : $ip_file"
@@ -170,11 +170,11 @@ LOG_INFO "RPC listen IP     : ${listen_ip}"
 LOG_INFO "Output Dir        : ${output_dir}"
 LOG_INFO "CA Key Path       : $ca_file"
 [ ! -z $guomi_mode ] && LOG_INFO "Guomi mode        : $guomi_mode"
-echo "================================================================"
+echo "=============================================================="
 if [ "${listen_ip}" == "127.0.0.1" ];then LOG_WARN "RPC listens 127.0.0.1 will cause nodes' JSON-RPC and Channel service to be inaccessible form other machines";fi
 LOG_INFO "Execute the download_console.sh script to get FISCO-BCOS console, download_console.sh is in directory named by IP."
 echo " bash download_console.sh"
-echo "================================================================"
+echo "=============================================================="
 LOG_INFO "All completed. Files in ${output_dir}"
 }
 
@@ -1066,14 +1066,11 @@ check_bin()
 {
     echo "Checking fisco-bcos binary..."
     bin_version=$(${bin_path} -v)
-    if [ -z "$(echo ${bin_version} | grep 'FISCO-BCOS')" ];then
+    if [[ -z "$(echo ${bin_version} | grep 'FISCO-BCOS')" ]];then
         exit_with_clean "${bin_path} is wrong. Please correct it and try again."
     fi
-    if [[ ! -z ${guomi_mode} && -z $(echo ${bin_version} | grep 'gm') ]];then
-        exit_with_clean "${bin_path} isn't gm version. Please correct it and try again."
-    fi
-    if [[ -z ${guomi_mode} && ! -z $(echo ${bin_version} | grep 'gm') ]];then
-        exit_with_clean "${bin_path} isn't standard version. Please correct it and try again."
+    if [[ -z $(echo ${bin_version} | grep 'wedpr') ]];then
+        exit_with_clean "${bin_path} isn't wedpr version. Please correct it and try again."
     fi
     echo "Binary check passed."
 }
@@ -1107,11 +1104,11 @@ fi
 # download fisco-bcos and check it
 if [ -z ${docker_mode} ];then
     if [[ -z ${bin_path} ]];then
-        download_bin
+        # download_bin
+        echo "Not support download wedpr node now!"
+        exit_with_clean "Download error!"
     else
-        # check_bin
-        chmod a+x ${bin_path}
-        echo "use wedpr fisco-bcos"
+        check_bin
     fi
 fi
 if [ -z ${CertConfig} ] || [ ! -e ${CertConfig} ];then
