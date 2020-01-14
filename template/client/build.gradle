@@ -34,7 +34,10 @@ jacocoTestReport {
 dependencies {
 
     compile files('lib/pkey-gen.jar')
-    compile files('lib/WeDPR-Java-SDK.jar')
+    compile files('lib/WeDPR-Java-SDK-asset-hiding.jar')
+    compile files('lib/WeDPR-Java-SDK-anonymous-voting.jar')
+    compile files('lib/WeDPR-Java-SDK-anonymous-auction.jar')
+    compile files('lib/WeDPR-Java-SDK-selective-disclosure.jar')
     compile 'org.fisco-bcos:web3sdk:2.1.0'
     compile 'org.slf4j:slf4j-log4j12:1.7.25'
     compile 'com.google.protobuf:protobuf-java:3.9.1'
