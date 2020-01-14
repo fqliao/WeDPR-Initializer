@@ -371,7 +371,7 @@ if __name__ == "__main__":
             download_bin(jar_download_link, name)
             shutil.copy("./WeDPR-Java-SDK-selective-disclosure.jar",
                     "{}/lib/WeDPR-Java-SDK-selective-disclosure.jar".format(client_path))
-            shutil.move("./WeDPR-Java-SDK-asset-hiding.jar",
+            shutil.move("./WeDPR-Java-SDK-selective-disclosure.jar",
                     "{}/conf/WeDPR-Java-SDK-selective-disclosure.jar".format(console_path))
     else:
         shutil.rmtree(
