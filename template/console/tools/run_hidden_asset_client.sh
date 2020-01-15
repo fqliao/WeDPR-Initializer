@@ -32,7 +32,7 @@ function check_java(){
 }
 
 function run(){
-      java -Djdk.tls.namedGroups="secp256k1" -cp "../../apps/*:../../conf/:../../lib/*" com.webank.wedpr.assethiding.TestClientMain
+      java -Djdk.tls.namedGroups="secp256k1" -cp "../apps/*:../conf/:../lib/*" com.webank.wedpr.assethiding.TestClientMain
 }
 
 function main() {

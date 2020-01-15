@@ -282,7 +282,7 @@ if __name__ == "__main__":
             shutil.copy("{}".format(anonymous_voting_jar),
                         "{}/lib/WeDPR-Java-SDK-anonymous-voting.jar".format(client_path))
             shutil.copy("{}".format(anonymous_voting_jar),
-                        "{}/conf/WeDPR-Java-SDK-anonymous-voting.jar".format(console_path))
+                        "{}/apps/WeDPR-Java-SDK-anonymous-voting.jar".format(console_path))
         else:
             jar_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK-anonymous-voting.jar'
             name = "WeDPR-Java-SDK-anonymous-voting.jar"
@@ -290,7 +290,7 @@ if __name__ == "__main__":
             shutil.copy("./WeDPR-Java-SDK-anonymous-voting.jar",
                     "{}/lib/WeDPR-Java-SDK-anonymous-voting.jar".format(client_path))
             shutil.move("./WeDPR-Java-SDK-anonymous-voting.jar",
-                    "{}/conf/WeDPR-Java-SDK-anonymous-voting.jar".format(console_path))
+                    "{}/apps/WeDPR-Java-SDK-anonymous-voting.jar".format(console_path))
 
     else:
         shutil.rmtree(
@@ -299,6 +299,8 @@ if __name__ == "__main__":
             '{}/src/test/java/com/webank/wedpr/anonymousvoting'.format(client_path))
         os.remove(
             '{}/tools/run_anonymous_voting_client.sh'.format(console_path))
+        os.remove(
+            '{}/contracts/AnonymousVotingExample.sol'.format(client_path))
 
     if hidden_asset:
         asset_table_file = '{}/src/main/java/com/webank/wedpr/example/assethiding/DemoMain.java'.format(
@@ -311,7 +313,7 @@ if __name__ == "__main__":
             shutil.copy("{}".format(hidden_asset_jar),
                         "{}/lib/WeDPR-Java-SDK-asset-hiding.jar".format(client_path))
             shutil.copy("{}".format(hidden_asset_jar),
-                        "{}/conf/WeDPR-Java-SDK-asset-hiding.jar".format(console_path))
+                        "{}/apps/WeDPR-Java-SDK-asset-hiding.jar".format(console_path))
         else:
             jar_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK-asset-hiding.jar'
             name = "WeDPR-Java-SDK-asset-hiding.jar"
@@ -319,7 +321,7 @@ if __name__ == "__main__":
             shutil.copy("./WeDPR-Java-SDK-asset-hiding.jar",
                     "{}/lib/WeDPR-Java-SDK-asset-hiding.jar".format(client_path))
             shutil.move("./WeDPR-Java-SDK-asset-hiding.jar",
-                    "{}/conf/WeDPR-Java-SDK-asset-hiding.jar".format(console_path))
+                    "{}/apps/WeDPR-Java-SDK-asset-hiding.jar".format(console_path))
     else:
         shutil.rmtree(
             '{}/src/main/java/com/webank/wedpr/example/assethiding'.format(client_path))
@@ -327,6 +329,8 @@ if __name__ == "__main__":
             '{}/src/test/java/com/webank/wedpr/assethiding'.format(client_path))
         os.remove(
             '{}/run_hidden_asset_client.sh'.format(console_path))
+        os.remove(
+            '{}/contracts/HiddenAssetExample.sol'.format(client_path))
 
     if anonymous_auction:
         anonymous_auction_table_file = '{}/src/main/java/com/webank/wedpr/example/anonymousauction/DemoMain.java'.format(
@@ -339,7 +343,7 @@ if __name__ == "__main__":
             shutil.copy("{}".format(anonymous_auction_jar),
                         "{}/lib/WeDPR-Java-SDK-anonymous-auction.jar".format(client_path))
             shutil.copy("{}".format(anonymous_auction_jar),
-                        "{}/conf/WeDPR-Java-SDK-anonymous-auction.jar".format(console_path))
+                        "{}/apps/WeDPR-Java-SDK-anonymous-auction.jar".format(console_path))
         else:
             jar_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK-anonymous-auction.jar'
             name = "WeDPR-Java-SDK-anonymous-auction.jar"
@@ -347,7 +351,7 @@ if __name__ == "__main__":
             shutil.copy("./WeDPR-Java-SDK-anonymous-auction.jar",
                     "{}/lib/WeDPR-Java-SDK-anonymous-auction.jar".format(client_path))
             shutil.move("./WeDPR-Java-SDK-anonymous-auction.jar",
-                    "{}/conf/WeDPR-Java-SDK-anonymous-auction.jar".format(console_path))
+                    "{}/apps/WeDPR-Java-SDK-anonymous-auction.jar".format(console_path))
     else:
         shutil.rmtree(
             '{}/src/main/java/com/webank/wedpr/example/anonymousauction'.format(client_path))
@@ -355,6 +359,8 @@ if __name__ == "__main__":
             '{}/src/test/java/com/webank/wedpr/anonymousauction'.format(client_path))
         os.remove(
             '{}/run_anonymous_auction_client.sh'.format(console_path))
+        os.remove(
+            '{}/contracts/AnonymousAuctionExample.sol'.format(client_path))
 
 
     if selective_disclosure:
@@ -364,7 +370,7 @@ if __name__ == "__main__":
             shutil.copy("{}".format(selective_disclosure_jar),
                         "{}/lib/WeDPR-Java-SDK-selective-disclosure.jar".format(client_path))
             shutil.copy("{}".format(selective_disclosure_jar),
-                        "{}/conf/WeDPR-Java-SDK-selective-disclosure.jar".format(console_path))
+                        "{}/apps/WeDPR-Java-SDK-selective-disclosure.jar".format(console_path))
         else:
             jar_download_link = 'https://github.com/WeDPR/TestBinary/releases/download/v0.1/WeDPR-Java-SDK-selective-disclosure.jar'
             name = "WeDPR-Java-SDK-selective-disclosure.jar"
@@ -372,7 +378,7 @@ if __name__ == "__main__":
             shutil.copy("./WeDPR-Java-SDK-selective-disclosure.jar",
                     "{}/lib/WeDPR-Java-SDK-selective-disclosure.jar".format(client_path))
             shutil.move("./WeDPR-Java-SDK-selective-disclosure.jar",
-                    "{}/conf/WeDPR-Java-SDK-selective-disclosure.jar".format(console_path))
+                    "{}/apps/WeDPR-Java-SDK-selective-disclosure.jar".format(console_path))
     else:
         shutil.rmtree(
             '{}/src/main/java/com/webank/wedpr/example/selectivedisclosure'.format(client_path))
@@ -380,6 +386,7 @@ if __name__ == "__main__":
             '{}/src/test/java/com/webank/wedpr/selectivedisclosure'.format(client_path))
         os.remove(
             '{}/run_selective_disclosure_client.sh'.format(console_path))
+        
             
     (status, result)\
         = getstatusoutput('bash ./scripts/build_chain.sh -l "127.0.0.1:4" -p 30300,20200,8545 -e {}/fisco-bcos -o {}/nodes'.format(app_output_path, app_output_path))
