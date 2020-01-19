@@ -100,14 +100,3 @@ jar {
 		}
 	}
 }
-
-task downloadWeDPRLib(type: Exec) {
-    workingDir "$projectDir/tools"
-    if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
-        commandLine 'cmd', '/c', 'download_dynamic_lib.bat'
-    } else {
-        commandLine 'bash', 'download_dynamic_lib.sh'
-    }
-}
-
-build.dependsOn downloadWeDPRLib
