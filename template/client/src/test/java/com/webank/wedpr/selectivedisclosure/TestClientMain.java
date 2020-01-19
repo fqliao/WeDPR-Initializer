@@ -1,9 +1,9 @@
 package com.webank.wedpr.selectivedisclosure;
 
-import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.common.UtilsForTest;
 import com.webank.wedpr.example.selectivedisclosure.DemoMain;
 import com.webank.wedpr.selectivedisclosure.proto.Predicate;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -15,8 +15,6 @@ import org.jline.reader.LineReader;
 import org.jline.reader.Reference;
 
 public class TestClientMain {
-
-    public static final String DIGTAL_PATERN = "^\\d+$";
 
     public static void main(String[] args) throws Exception {
         System.out.println("Welcome to test selective disclosure!");
@@ -68,14 +66,25 @@ public class TestClientMain {
                         i--;
                         continue;
                     }
-                    String value = params[0].trim();
-                    if (!value.matches(DIGTAL_PATERN)) {
+                    String valueStr = params[0].trim();
+                    if (!SelectivedisclosureUtils.isDecimalInteger(valueStr)) {
                         System.out.println(
-                                "Error:please provide attribute value greater or equal 0 by decimal digit.\n");
+                                "Error:please provide attribute value greater or equal than "
+                                        + Integer.MIN_VALUE
+                                        + " by decimal digit.\n");
                         i--;
                         continue;
                     }
-                    credentialInfoMap.put(attributeList.get(i), value);
+                    BigInteger value = new BigInteger(valueStr);
+                    if (value.compareTo(BigInteger.valueOf(Integer.MIN_VALUE)) < 0) {
+                        System.out.println(
+                                "Error:please provide attribute value greater or equal than "
+                                        + Integer.MIN_VALUE
+                                        + " by decimal digit.\n");
+                        i--;
+                        continue;
+                    }
+                    credentialInfoMap.put(attributeList.get(i), valueStr);
                 }
                 credentialInfoMapFlag = false;
             }
@@ -141,14 +150,18 @@ public class TestClientMain {
                         predicateValue = Integer.parseInt(params[2].trim());
                     } catch (NumberFormatException e) {
                         System.out.println(
-                                "Error:please provide predicate value from 0 to "
+                                "Error:please provide predicate value from "
+                                        + Integer.MIN_VALUE
+                                        + " to "
                                         + Integer.MAX_VALUE
-                                        + " by integer mode.\n");
+                                        + " by decimal digit.\n");
+                        i--;
                         continue;
                     }
 
                     Predicate predicate =
-                            Utils.makePredicate(attributeName, predicateCondition, predicateValue);
+                            SelectivedisclosureUtils.makePredicate(
+                                    attributeName, predicateCondition, predicateValue);
                     predicateList.add(predicate);
                 }
                 predicateListFlag = false;

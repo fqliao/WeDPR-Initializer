@@ -1,7 +1,8 @@
 package com.webank.wedpr.example.anonymousvoting;
 
+import com.webank.wedpr.anonymousvoting.proto.StringToInt64Pair;
 import com.webank.wedpr.anonymousvoting.proto.SystemParametersStorage;
-import com.webank.wedpr.anonymousvoting.proto.VoteResultRequest;
+import com.webank.wedpr.anonymousvoting.proto.VoteResultStorage;
 import com.webank.wedpr.common.Utils;
 import java.math.BigInteger;
 import java.util.List;
@@ -10,6 +11,10 @@ import org.fisco.bcos.web3j.tx.txdecode.ResultEntity;
 import org.fisco.bcos.web3j.tx.txdecode.TransactionDecoder;
 import org.fisco.bcos.web3j.tx.txdecode.TransactionDecoderFactory;
 
+/**
+ * @author caryliao
+ * @date 2020/01/15
+ */
 public class StorageExampleClient {
 
     private AnonymousVotingExample anonymousVoting;
@@ -37,6 +42,11 @@ public class StorageExampleClient {
                 TransactionDecoderFactory.buildTransactionDecoder(AnonymousVotingExample.ABI, "");
     }
 
+    /**
+     * Inits contract.
+     *
+     * @throws Exception
+     */
     public void init() throws Exception {
         TransactionReceipt transactionReceipt =
                 anonymousVoting
@@ -54,6 +64,14 @@ public class StorageExampleClient {
         return transactionDecoder;
     }
 
+    /**
+     * Verifies unbounded voteRequest
+     *
+     * @param voteRequest
+     * @param systemParameters
+     * @return
+     * @throws Exception
+     */
     public TransactionReceipt verifyUnboundedVoteRequest(
             String voteRequest, SystemParametersStorage systemParameters) throws Exception {
         TransactionReceipt transactionReceipt =
@@ -65,6 +83,14 @@ public class StorageExampleClient {
         return transactionReceipt;
     }
 
+    /**
+     * Verifies bounded voteRequest
+     *
+     * @param voteRequest
+     * @param systemParameters
+     * @return
+     * @throws Exception
+     */
     public TransactionReceipt verifyBoundedVoteRequest(
             String voteRequest, SystemParametersStorage systemParameters) throws Exception {
         TransactionReceipt transactionReceipt =
@@ -76,18 +102,36 @@ public class StorageExampleClient {
         return transactionReceipt;
     }
 
-    public boolean aggregateVoteStorage(SystemParametersStorage systemParameters) throws Exception {
-        TransactionReceipt transactionReceipt =
-                anonymousVoting
-                        .aggregateVoteStorage(Utils.protoToEncodedString(systemParameters))
-                        .send();
-        Utils.checkTranactionReceipt(transactionReceipt);
-        List<ResultEntity> receiptOutputResult =
-                Utils.getReceiptOutputResult(transactionDecoder, transactionReceipt);
+    /**
+     * Aggregates voteStorage
+     *
+     * @param systemParameters
+     * @throws Exception
+     */
+    public void aggregateVoteStorage(SystemParametersStorage systemParameters) throws Exception {
+        boolean result = true;
+        do {
+            TransactionReceipt transactionReceipt =
+                    anonymousVoting
+                            .aggregateVoteStorage(Utils.protoToEncodedString(systemParameters))
+                            .send();
+            Utils.checkTranactionReceipt(transactionReceipt);
+            List<ResultEntity> receiptOutputResult =
+                    Utils.getReceiptOutputResult(transactionDecoder, transactionReceipt);
 
-        return (Boolean) receiptOutputResult.get(0).getData();
+            result = (Boolean) receiptOutputResult.get(0).getData();
+        } while (result);
     }
 
+    /**
+     * Verifies countRequest
+     *
+     * @param hPointShare
+     * @param decryptedRequest
+     * @param voteStorage
+     * @param systemParameters
+     * @throws Exception
+     */
     public void verifyCountRequest(
             String hPointShare,
             String decryptedRequest,
@@ -105,17 +149,26 @@ public class StorageExampleClient {
         Utils.checkTranactionReceipt(transactionReceipt);
     }
 
-    public boolean aggregateDecryptedPart(SystemParametersStorage systemParameters)
-            throws Exception {
-        TransactionReceipt transactionReceipt =
-                anonymousVoting
-                        .aggregateDecryptedPart(Utils.protoToEncodedString(systemParameters))
-                        .send();
-        Utils.checkTranactionReceipt(transactionReceipt);
-        List<ResultEntity> receiptOutputResult =
-                Utils.getReceiptOutputResult(transactionDecoder, transactionReceipt);
-        return (Boolean) receiptOutputResult.get(0).getData();
+    /**
+     * Aggregates decryptedPart.
+     *
+     * @param systemParameters
+     * @throws Exception
+     */
+    public void aggregateDecryptedPart(SystemParametersStorage systemParameters) throws Exception {
+        boolean result = true;
+        do {
+            TransactionReceipt transactionReceipt =
+                    anonymousVoting
+                            .aggregateDecryptedPart(Utils.protoToEncodedString(systemParameters))
+                            .send();
+            Utils.checkTranactionReceipt(transactionReceipt);
+            List<ResultEntity> receiptOutputResult =
+                    Utils.getReceiptOutputResult(transactionDecoder, transactionReceipt);
+            result = (Boolean) receiptOutputResult.get(0).getData();
+        } while (result);
     }
+
     /**
      * Inserts a counter hPoint share.
      *
@@ -124,21 +177,14 @@ public class StorageExampleClient {
      * @return
      * @throws Exception
      */
-    public void insertHPointShare(String counterId, String hPointShare) throws Exception {
+    public void uploadHPointShare(String counterId, String hPointShare) throws Exception {
         TransactionReceipt transactionReceipt =
                 anonymousVoting.insertHPointShare(counterId, hPointShare).send();
         Utils.checkTranactionReceipt(transactionReceipt);
     }
 
-    /**
-     * Queries a counter hPoint share.
-     *
-     * @param counterId
-     * @return
-     * @throws Exception
-     */
-    public List<String> queryHPointShare(String counterId) throws Exception {
-        return anonymousVoting.queryHPointShare(counterId).send();
+    public String queryHPointShare(String counterId) throws Exception {
+        return (String) anonymousVoting.queryHPointShare(counterId).send().get(0);
     }
 
     /**
@@ -152,72 +198,71 @@ public class StorageExampleClient {
         Utils.checkTranactionReceipt(transactionReceipt);
     }
 
-    public void verifyVoteResult(
-            VoteResultRequest voteResultRequest, SystemParametersStorage systemParameters)
+    /**
+     * Verifies vote result.
+     *
+     * @param voteResultRequest
+     * @param systemParameters
+     * @throws Exception
+     */
+    public void verifyVoteResult(String voteResultRequest, SystemParametersStorage systemParameters)
             throws Exception {
         TransactionReceipt transactionReceipt =
                 anonymousVoting
                         .verifyVoteResult(
-                                Utils.protoToEncodedString(voteResultRequest),
-                                Utils.protoToEncodedString(systemParameters))
+                                voteResultRequest, Utils.protoToEncodedString(systemParameters))
                         .send();
         Utils.checkTranactionReceipt(transactionReceipt);
     }
 
-    public void setCandidates(List<String> candidates) throws Exception {
+    /**
+     * Uploads candidates.
+     *
+     * @param candidates
+     * @throws Exception
+     */
+    public void uploadCandidates(List<String> candidates) throws Exception {
         TransactionReceipt transactionReceipt = anonymousVoting.setCandidates(candidates).send();
         Utils.checkTranactionReceipt(transactionReceipt);
     }
 
-    public BigInteger getContractState() throws Exception {
+    public BigInteger queryContractState() throws Exception {
         return anonymousVoting.contractState().send();
     }
 
-    public List<String> getCandidates() throws Exception {
+    public List<String> queryCandidates() throws Exception {
         return anonymousVoting.getCandidates().send();
     }
 
-    public String getHPoint() throws Exception {
+    public String queryHPoint() throws Exception {
         return anonymousVoting.getHPoint().send();
     }
 
-    public String getDecryptedResultPartStorageSumTotal() throws Exception {
+    public String queryDecryptedResultPartStorageSumTotal() throws Exception {
         return anonymousVoting.getDecryptedResultPartStorageSum().send();
     }
 
-    public String getVoteStorageSum() throws Exception {
+    public String queryVoteStorageSum() throws Exception {
         return anonymousVoting.getVoteStorageSum().send();
     }
 
-    public String getVoteResultStorage() throws Exception {
-        return anonymousVoting.getVoteResultStorage().send();
+    public List<StringToInt64Pair> queryVoteResult() throws Exception {
+        String encodedVoteResultStorage = anonymousVoting.getVoteResultStorage().send();
+        VoteResultStorage voteResultStorage =
+                VoteResultStorage.parseFrom(Utils.stringToBytes(encodedVoteResultStorage));
+        return voteResultStorage.getResultList();
     }
 
     public List<String> queryVoteStoragePart(String blankBallot) throws Exception {
         return anonymousVoting.queryVoteStoragePart(blankBallot).send();
     }
 
-    /**
-     * Inserts regulation information.
-     *
-     * @param blankBallot
-     * @param regulationInfoPb
-     * @return
-     * @throws Exception
-     */
     public void insertRegulationInfo(String blankBallot, String regulationInfoPb) throws Exception {
         TransactionReceipt transactionReceipt =
                 anonymousVoting.insertRegulationInfo(blankBallot, regulationInfoPb).send();
         Utils.checkTranactionReceipt(transactionReceipt);
     }
 
-    /**
-     * Queries regulation information.
-     *
-     * @param blankBallot
-     * @return
-     * @throws Exception
-     */
     public List<String> queryRegulationInfo(String blankBallot) throws Exception {
         return anonymousVoting.queryRegulationInfo(blankBallot).send();
     }

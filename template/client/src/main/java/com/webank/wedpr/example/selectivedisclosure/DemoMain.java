@@ -1,7 +1,6 @@
 package com.webank.wedpr.example.selectivedisclosure;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.common.WedprException;
 import com.webank.wedpr.selectivedisclosure.CredentialTemplateStorage;
 import com.webank.wedpr.selectivedisclosure.IssuerClient;
@@ -11,9 +10,7 @@ import com.webank.wedpr.selectivedisclosure.SelectivedisclosureUtils;
 import com.webank.wedpr.selectivedisclosure.UserClient;
 import com.webank.wedpr.selectivedisclosure.UserResult;
 import com.webank.wedpr.selectivedisclosure.VerifierClient;
-import com.webank.wedpr.selectivedisclosure.VerifierResult;
 import com.webank.wedpr.selectivedisclosure.proto.Predicate;
-import com.webank.wedpr.selectivedisclosure.proto.RevealedAttributeInfo;
 import com.webank.wedpr.selectivedisclosure.proto.StringToStringPair;
 import com.webank.wedpr.selectivedisclosure.proto.VerificationRule;
 import java.util.ArrayList;
@@ -37,13 +34,15 @@ public class DemoMain {
         credentialInfoMap.put(
                 "name",
                 "5944657099558967239210949258394887428692050081607692519917050011144233115103");
-        credentialInfoMap.put("age", "20");
+        credentialInfoMap.put("age", "30");
         credentialInfoMap.put("balance", "10000");
 
         // Predicate support: LT LE GT GE EQ
-        Predicate predicate1 = Utils.makePredicate("age", PredicateType.GE, 20);
-        Predicate predicate2 = Utils.makePredicate("balance", PredicateType.GE, 10000);
-        Predicate predicate3 = Utils.makePredicate("balance", PredicateType.LT, 10001);
+        Predicate predicate1 = SelectivedisclosureUtils.makePredicate("age", PredicateType.GE, 20);
+        Predicate predicate2 =
+                SelectivedisclosureUtils.makePredicate("balance", PredicateType.GE, 10000);
+        Predicate predicate3 =
+                SelectivedisclosureUtils.makePredicate("balance", PredicateType.LT, 10001);
         predicateList.add(predicate1);
         predicateList.add(predicate2);
         predicateList.add(predicate3);
@@ -54,25 +53,32 @@ public class DemoMain {
     }
 
     public static void run() throws WedprException, InvalidProtocolBufferException {
-        // 1 Issuer make credential template.
+
+        /////////////////////////////////////
+        // 1 Issuer makes credential template.
+        /////////////////////////////////////
         IssuerResult issuerResult = IssuerClient.makeCredentialTemplate(attributeList);
         System.out.println("attributeList:" + attributeList);
-        // Issuer save the templateSecretKey
+        // Issuer saves templateSecretKey
         String templateSecretKey = issuerResult.templateSecretKey;
         CredentialTemplateStorage credentialTemplateStorage =
                 issuerResult.credentialTemplateStorage;
 
-        // 2 User make credential.
+        /////////////////////////////////////////////////////
+        // 2 User makes credential without signature request.
+        /////////////////////////////////////////////////////
+        System.out.println("credentialInfoMap:" + credentialInfoMap);
         UserResult userResult =
                 UserClient.makeCredential(credentialInfoMap, credentialTemplateStorage);
-        System.out.println("credentialInfoMap:" + credentialInfoMap);
         String credentialSignatureRequest = userResult.credentialSignatureRequest;
-        // masterSecret is saved by User
+        // User saves masterSecret.
         String masterSecret = userResult.masterSecret;
         String credentialSecretsBlindingFactors = userResult.credentialSecretsBlindingFactors;
         String userNonce = userResult.userNonce;
 
-        // 3 Issuer sign credential.
+        ////////////////////////////
+        // 3 Issuer signs credential.
+        ////////////////////////////
         issuerResult =
                 IssuerClient.signCredential(
                         credentialTemplateStorage,
@@ -83,7 +89,9 @@ public class DemoMain {
         String credentialSignature = issuerResult.credentialSignature;
         String issuerNonce = issuerResult.issuerNonce;
 
-        // 4 User blind credential signature.
+        /////////////////////////////////////
+        // 4 User blinds credential signature.
+        /////////////////////////////////////
         userResult =
                 UserClient.blindCredentialSignature(
                         credentialSignature,
@@ -92,14 +100,18 @@ public class DemoMain {
                         masterSecret,
                         credentialSecretsBlindingFactors,
                         issuerNonce);
-        // newCredentialSignature is saved by User.
+        // User saves new credential signature.
         String blindedCredentialSignature = userResult.credentialSignature;
-        // 5 User set VerificationRule.
+
+        /////////////////////////////////
+        // 5 User sets VerificationRule.
+        /////////////////////////////////
         VerificationRule verificationRule =
                 SelectivedisclosureUtils.makeVerificationRule(revealedAttributeList, predicateList);
-        System.out.println("verificationRule:" + verificationRule);
 
-        // 6 User prove credentialInfo.
+        /////////////////////////////////////
+        // 6 User makes verification request.
+        /////////////////////////////////////
         userResult =
                 UserClient.proveCredentialInfo(
                         verificationRule,
@@ -109,19 +121,17 @@ public class DemoMain {
                         masterSecret);
         String verificationRequest = userResult.verificationRequest;
 
-        // 7 Verifier verify credential proof.
-        VerifierResult verifierResult =
-                VerifierClient.verifyProof(verificationRule, verificationRequest);
-        Utils.checkWedprResult(verifierResult);
+        /////////////////////////////
+        // 7 Verifier verifies proof.
+        /////////////////////////////
+        VerifierClient.verifyProof(verificationRule, verificationRequest);
         System.out.println("Verify successfully!");
 
-        // 8 Verifier get revealed attribute info from verificationRequest
-        verifierResult =
-                VerifierClient.getRevealedAttrsFromVerificationRequest(verificationRequest);
-        String revealedAttributeInfo = verifierResult.revealedAttributeInfo;
-        RevealedAttributeInfo revealedAttributes =
-                RevealedAttributeInfo.parseFrom(Utils.stringToBytes(revealedAttributeInfo));
-        List<StringToStringPair> attrList = revealedAttributes.getAttrList();
-        System.out.println(attrList);
+        ////////////////////////////////////////////////////////////////////
+        // 8 Verifier gets revealed attribute info from verification request.
+        ////////////////////////////////////////////////////////////////////
+        List<StringToStringPair> revealedAttributeList =
+                SelectivedisclosureUtils.getRevealedAttributeList(verificationRequest);
+        System.out.println(revealedAttributeList);
     }
 }

@@ -1,24 +1,16 @@
 package com.webank.wedpr.common;
 
-import com.webank.wedpr.anonymousauction.AnonymousAuctionExamplePerf;
-import com.webank.wedpr.anonymousauction.StorageExampleClientPerf;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StreamTokenizer;
 import java.io.StringReader;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 import org.fisco.bcos.channel.client.Service;
-import org.fisco.bcos.web3j.crypto.ECKeyPair;
 import org.fisco.bcos.web3j.protocol.Web3j;
 import org.fisco.bcos.web3j.protocol.channel.ChannelEthereumService;
-import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.fisco.bcos.web3j.tx.gas.StaticGasProvider;
 import org.jline.reader.Completer;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
@@ -158,45 +150,5 @@ public class UtilsForTest {
         } finally {
             context.close();
         }
-    }
-
-    public static StorageExampleClientPerf initContract(
-            ECKeyPair ecKeyPair,
-            int groupID,
-            String bidderTableName,
-            String uuidTableName,
-            String regulationInfoTableName)
-            throws InvalidAlgorithmParameterException, NoSuchAlgorithmException,
-                    NoSuchProviderException, Exception {
-        AnonymousAuctionExamplePerf anonymousAuctionExample =
-                AnonymousAuctionExamplePerf.deploy(
-                                Utils.getWeb3j(groupID),
-                                Utils.getCredentials(ecKeyPair),
-                                new StaticGasProvider(Utils.GASPRICE, Utils.GASLIMIT))
-                        .send();
-        System.out.println("###address:" + anonymousAuctionExample.getContractAddress());
-
-        // Enable parallel
-        TransactionReceipt enableParallelTransactionReceipt =
-                anonymousAuctionExample.enableParallel().send();
-        Utils.checkTranactionReceipt(enableParallelTransactionReceipt);
-
-        String truncateAddress = Utils.truncateAddress(anonymousAuctionExample);
-        bidderTableName = bidderTableName + truncateAddress;
-        uuidTableName = uuidTableName + truncateAddress;
-        regulationInfoTableName = regulationInfoTableName + truncateAddress;
-        System.out.println("bidderTableName:" + bidderTableName);
-        System.out.println("uuidTableName:" + uuidTableName);
-        System.out.println("regulationInfoTableName:" + regulationInfoTableName);
-
-        StorageExampleClientPerf storageClient =
-                new StorageExampleClientPerf(
-                        anonymousAuctionExample,
-                        bidderTableName,
-                        uuidTableName,
-                        regulationInfoTableName);
-
-        storageClient.init();
-        return storageClient;
     }
 }

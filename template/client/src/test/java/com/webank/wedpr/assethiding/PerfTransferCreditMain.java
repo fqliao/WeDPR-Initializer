@@ -39,7 +39,7 @@ public class PerfTransferCreditMain {
                             PerformanceCallback callback = new PerformanceCallback();
                             callback.setCollector(collector);
                             try {
-                                transferCreditParams.hiddenAssetExamplePerf.transferredCredit(
+                                transferCreditParams.hiddenAssetExamplePerf.transferCredit(
                                         Utils.getUuid(),
                                         transferCreditParams.transferRequest,
                                         callback);

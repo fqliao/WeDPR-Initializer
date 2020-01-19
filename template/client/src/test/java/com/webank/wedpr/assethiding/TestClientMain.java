@@ -11,11 +11,11 @@ import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.common.UtilsForTest;
 import com.webank.wedpr.example.assethiding.DemoMain;
 import com.webank.wedpr.example.assethiding.DemoMain.TransferType;
-import com.webank.wedpr.example.assethiding.FulfillCreditExampleProtocol;
-import com.webank.wedpr.example.assethiding.IssueCreditExampleProtocol;
-import com.webank.wedpr.example.assethiding.SplitCreditExampleProtocol;
+import com.webank.wedpr.example.assethiding.FulfillCreditExample;
+import com.webank.wedpr.example.assethiding.IssueCreditExample;
+import com.webank.wedpr.example.assethiding.SplitCreditExample;
 import com.webank.wedpr.example.assethiding.StorageExampleClient;
-import com.webank.wedpr.example.assethiding.TransferCreditExampleProtocol;
+import com.webank.wedpr.example.assethiding.TransferCreditExample;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URISyntaxException;
@@ -117,7 +117,7 @@ public class TestClientMain {
                         creditValue =
                                 CreditValue.newBuilder().setStringValue(issueStringValue).build();
                         CreditCredential creditCredential =
-                                IssueCreditExampleProtocol.issueCredit(
+                                IssueCreditExample.issueCredit(
                                         TransferType.NonNumberic,
                                         redeemerKeyPair,
                                         creditValue,
@@ -170,7 +170,7 @@ public class TestClientMain {
                                         .setNumericalValue(issueNumbericValue)
                                         .build();
                         CreditCredential creditCredential =
-                                IssueCreditExampleProtocol.issueCredit(
+                                IssueCreditExample.issueCredit(
                                         TransferType.Numberic,
                                         redeemerKeyPair,
                                         creditValue,
@@ -247,7 +247,7 @@ public class TestClientMain {
                                             + "' credit.\n");
                             break;
                         }
-                        FulfillCreditExampleProtocol.fulfillCredit(
+                        FulfillCreditExample.fulfillCredit(
                                 TransferType.NonNumberic,
                                 redeemerKeyPair,
                                 fulfillCreditCredentials,
@@ -305,7 +305,7 @@ public class TestClientMain {
                                             + " credit.\n");
                             break;
                         }
-                        FulfillCreditExampleProtocol.fulfillCredit(
+                        FulfillCreditExample.fulfillCredit(
                                 TransferType.Numberic,
                                 redeemerKeyPair,
                                 fulfillCreditCredentials,
@@ -386,10 +386,10 @@ public class TestClientMain {
                         }
                         // init OwnerState
                         OwnerState senderOwnerState =
-                                AssethidingUtils.getSenderOwnerStateForTransfer(
+                                AssethidingUtils.makeSenderOwnerStateForTransfer(
                                         transferCreditCredentials);
                         OwnerState receiverOwnerState =
-                                AssethidingUtils.getReceiverOwnerState(receiverMasterSecret);
+                                AssethidingUtils.makeReceiverOwnerState(receiverMasterSecret);
                         CreditValue transferCreditValue =
                                 CreditValue.newBuilder()
                                         .setStringValue(transferStringValue)
@@ -402,7 +402,7 @@ public class TestClientMain {
                                         .build();
                         // execute transfer
                         CreditCredential receiverCreditCredential =
-                                TransferCreditExampleProtocol.transferCredit(
+                                TransferCreditExample.transferCredit(
                                         TransferType.NonNumberic,
                                         senderOwnerState,
                                         receiverOwnerState,
@@ -483,10 +483,10 @@ public class TestClientMain {
                         }
                         // init OwnerState
                         OwnerState senderOwnerState =
-                                AssethidingUtils.getSenderOwnerStateForTransfer(
+                                AssethidingUtils.makeSenderOwnerStateForTransfer(
                                         transferCreditCredentials);
                         OwnerState receiverOwnerState =
-                                AssethidingUtils.getReceiverOwnerState(receiverMasterSecret);
+                                AssethidingUtils.makeReceiverOwnerState(receiverMasterSecret);
                         CreditValue transferCreditValue =
                                 CreditValue.newBuilder()
                                         .setNumericalValue(longTransferValue)
@@ -499,7 +499,7 @@ public class TestClientMain {
                                         .build();
                         // execute transfer
                         CreditCredential receiverCreditCredential =
-                                TransferCreditExampleProtocol.transferCredit(
+                                TransferCreditExample.transferCredit(
                                         TransferType.Numberic,
                                         senderOwnerState,
                                         receiverOwnerState,
@@ -624,7 +624,7 @@ public class TestClientMain {
                             AssethidingUtils.getSenderOwnerStateForSplit(
                                     senderWallet.masterSecret, splitCreditCredentials);
                     OwnerState receiverOwnerState =
-                            AssethidingUtils.getReceiverOwnerState(receiverMasterSecret);
+                            AssethidingUtils.makeReceiverOwnerState(receiverMasterSecret);
                     CreditValue splitCreditValue =
                             CreditValue.newBuilder().setNumericalValue(longSplitValue).build();
                     // set TransactionInfo
@@ -635,7 +635,7 @@ public class TestClientMain {
                                     .build();
                     // execute split
                     List<CreditCredential> creditCredentialResult =
-                            SplitCreditExampleProtocol.splitCredit(
+                            SplitCreditExample.splitCredit(
                                     senderOwnerState,
                                     receiverOwnerState,
                                     transactionInfo,

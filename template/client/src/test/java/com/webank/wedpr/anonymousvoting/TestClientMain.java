@@ -277,12 +277,12 @@ public class TestClientMain {
             DemoMain.voter_count = voterCount;
             DemoMain.max_vote_number = maxVoteNumber;
             if (votingType == 1) { // vote bounded
-                DemoMain.blank_ballot_count = blankBallots;
-                DemoMain.voting_ballot_count = allVotingBallots;
+                DemoMain.bounded_blank_ballot_value = blankBallots;
+                DemoMain.bounded_voting_ballot_value = allVotingBallots;
                 DemoMain.doVoteBounded();
             } else if (votingType == 2) { // vote unbounded
-                DemoMain.blank_ballot_weight = blankBallots;
-                DemoMain.voting_ballot_weight = allVotingBallots;
+                DemoMain.unbounded_blank_ballot_value = blankBallots;
+                DemoMain.unbounded_voting_ballot_value = allVotingBallots;
                 DemoMain.doVoteUnbounded();
             } else {
                 System.out.println(

@@ -78,7 +78,7 @@ contract HiddenAssetExample is ParallelContract {
     {
         registerParallelFunction("issueCredit(string)", 1);
         registerParallelFunction("fulfillCredit(string)", 1);
-        registerParallelFunction("transferredCredit(string)", 1);
+        registerParallelFunction("transferCredit(string)", 1);
         registerParallelFunction("splitCredit(string)", 1);
     } 
 
@@ -87,7 +87,7 @@ contract HiddenAssetExample is ParallelContract {
     {
         unregisterParallelFunction("issueCredit(string)");
         unregisterParallelFunction("fulfillCredit(string)"); 
-        unregisterParallelFunction("transferredCredit(string)"); 
+        unregisterParallelFunction("transferCredit(string)"); 
         unregisterParallelFunction("splitCredit(string)"); 
     }
 
@@ -128,7 +128,7 @@ contract HiddenAssetExample is ParallelContract {
     }
 
     // Transfers an existing credit if the request passed the validation.
-    function transferredCredit(string transferRequest) public {
+    function transferCredit(string transferRequest) public {
         // verify the transfer credit
         TransferVars memory transferVars = TransferVars("", "", "", "", "");
 

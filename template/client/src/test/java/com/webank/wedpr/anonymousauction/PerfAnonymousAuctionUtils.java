@@ -11,11 +11,15 @@ import com.webank.wedpr.anonymousauction.proto.RegistrationResponse;
 import com.webank.wedpr.anonymousauction.proto.SystemParametersStorage;
 import com.webank.wedpr.common.EncodedKeyPair;
 import com.webank.wedpr.common.Utils;
-import com.webank.wedpr.common.UtilsForTest;
 import com.webank.wedpr.example.anonymousauction.DemoMain;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.List;
 import org.fisco.bcos.web3j.crypto.ECKeyPair;
+import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.fisco.bcos.web3j.tx.gas.StaticGasProvider;
 
 class UploadBidStorageParams {
     public StorageExampleClientPerf storageClient;
@@ -49,7 +53,7 @@ public class PerfAnonymousAuctionUtils {
         ECKeyPair ecKeyPair = Utils.getEcKeyPair();
         int groupID = 1;
         StorageExampleClientPerf storageClient =
-                UtilsForTest.initContract(
+                initContract(
                         ecKeyPair,
                         groupID,
                         DemoMain.bidderTableName,
@@ -209,5 +213,45 @@ public class PerfAnonymousAuctionUtils {
         verifyWinnerParams.winnerClaimRequest = winnerClaimRequest;
         verifyWinnerParams.allBidStorageRequest = allBidStorageRequest;
         return verifyWinnerParams;
+    }
+
+    private static StorageExampleClientPerf initContract(
+            ECKeyPair ecKeyPair,
+            int groupID,
+            String bidderTableName,
+            String uuidTableName,
+            String regulationInfoTableName)
+            throws InvalidAlgorithmParameterException, NoSuchAlgorithmException,
+                    NoSuchProviderException, Exception {
+        AnonymousAuctionExamplePerf anonymousAuctionExample =
+                AnonymousAuctionExamplePerf.deploy(
+                                Utils.getWeb3j(groupID),
+                                Utils.getCredentials(ecKeyPair),
+                                new StaticGasProvider(Utils.GASPRICE, Utils.GASLIMIT))
+                        .send();
+        System.out.println("###address:" + anonymousAuctionExample.getContractAddress());
+
+        // Enable parallel
+        TransactionReceipt enableParallelTransactionReceipt =
+                anonymousAuctionExample.enableParallel().send();
+        Utils.checkTranactionReceipt(enableParallelTransactionReceipt);
+
+        String truncateAddress = Utils.truncateAddress(anonymousAuctionExample);
+        bidderTableName = bidderTableName + truncateAddress;
+        uuidTableName = uuidTableName + truncateAddress;
+        regulationInfoTableName = regulationInfoTableName + truncateAddress;
+        System.out.println("bidderTableName:" + bidderTableName);
+        System.out.println("uuidTableName:" + uuidTableName);
+        System.out.println("regulationInfoTableName:" + regulationInfoTableName);
+
+        StorageExampleClientPerf storageClient =
+                new StorageExampleClientPerf(
+                        anonymousAuctionExample,
+                        bidderTableName,
+                        uuidTableName,
+                        regulationInfoTableName);
+
+        storageClient.init();
+        return storageClient;
     }
 }

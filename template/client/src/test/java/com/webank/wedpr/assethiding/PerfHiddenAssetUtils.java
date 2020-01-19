@@ -86,7 +86,8 @@ public class PerfHiddenAssetUtils {
         int value = 100;
         CreditValue creditValue = CreditValue.newBuilder().setNumericalValue(value).build();
         RedeemerResult redeemerResult =
-                RedeemerClient.confirmNumericalCredit(redeemerKeyPair, ownerResult, creditValue);
+                RedeemerClient.confirmNumericalCredit(
+                        redeemerKeyPair, ownerResult.issueArgument, creditValue);
 
         // 5 Clear issue credit secret data.
         IssueArgument issueArgument =
@@ -95,7 +96,7 @@ public class PerfHiddenAssetUtils {
                 Utils.protoToEncodedString(
                         issueArgument.toBuilder().clearCreditValue().clearRG().build());
         CreditCredential creditCredential =
-                OwnerClient.makeCreditCredential(redeemerResult, secretKey);
+                AssethidingUtils.makeCreditCredential(redeemerResult.creditCredential, secretKey);
         IssueCreditParams issueCreditParams = new IssueCreditParams();
         issueCreditParams.hiddenAssetExamplePerf = hiddenAssetExamplePerf;
         issueCreditParams.redeemerKeyPair = redeemerKeyPair;
@@ -118,11 +119,11 @@ public class PerfHiddenAssetUtils {
 
         // sender init OwnerState
         OwnerState senderOwnerState =
-                AssethidingUtils.getSenderOwnerStateForTransfer(creditCredential);
+                AssethidingUtils.makeSenderOwnerStateForTransfer(creditCredential);
         // receiver init OwnerState
         byte[] receiverMasterSecret = Utils.getSecret();
         OwnerState receiverOwnerState =
-                AssethidingUtils.getReceiverOwnerState(receiverMasterSecret);
+                AssethidingUtils.makeReceiverOwnerState(receiverMasterSecret);
         // set TransactionInfo
         TransactionInfo transactionInfo =
                 TransactionInfo.newBuilder()
@@ -174,7 +175,7 @@ public class PerfHiddenAssetUtils {
         // receiver init OwnerState
         byte[] receiverMasterSecret = Utils.getSecret();
         OwnerState receiverOwnerState =
-                AssethidingUtils.getReceiverOwnerState(receiverMasterSecret);
+                AssethidingUtils.makeReceiverOwnerState(receiverMasterSecret);
 
         // set TransactionInfo
         TransactionInfo transactionInfo =

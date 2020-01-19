@@ -23,7 +23,7 @@ public class PerfFulfillCreditMain {
         CreditCredential creditCredential = issueCreditParams.creditCredential;
 
         RedeemerResult redeemerFulfillResult =
-                RedeemerClient.fulfillNumericalCredit(redeemerKeyPair, creditCredential);
+                RedeemerClient.fulfillNumericalCredit(creditCredential);
 
         // Executes Perf test for verifying fulfill credit on blockchain.
         Integer count = Integer.parseInt(args[0]);

@@ -97,7 +97,7 @@ public class StorageExampleClient {
                                 .setArgument(transferArgument)
                                 .build());
         TransactionReceipt transactionReceipt =
-                hiddenAsset.transferredCredit(handledTransferRequest).send();
+                hiddenAsset.transferCredit(handledTransferRequest).send();
         Utils.checkTranactionReceipt(transactionReceipt);
     }
 
@@ -152,7 +152,7 @@ public class StorageExampleClient {
      * @param regulationInfoPb
      * @throws Exception
      */
-    public void insertRegulationInfo(
+    public void uploadRegulationInfo(
             String currentCreditPb, String spentCreditPb, String regulationInfoPb)
             throws Exception {
         TransactionReceipt transactionReceipt =

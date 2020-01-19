@@ -157,7 +157,7 @@ public class PerfAnonymousVotingUtils {
             CoordinatorResult coordinatorResult =
                     CoordinatorClient.certifyBoundedVoter(
                             coordinatorState,
-                            DemoMain.blank_ballot_count[i],
+                            DemoMain.bounded_blank_ballot_value[i],
                             registrationRequestList.get(i));
             registrationResponseList.add(coordinatorResult.registrationResponse);
         }
@@ -167,7 +167,7 @@ public class PerfAnonymousVotingUtils {
         for (int i = 0; i < DemoMain.voter_count; i++) {
             VotingChoices votingChoices =
                     AnonymousvotingUtils.makeVotingChoices(
-                            candidates, DemoMain.voting_ballot_count[i]);
+                            candidates, DemoMain.bounded_voting_ballot_value[i]);
             VoterState voterState = voterStateList.get(i);
             String registrationResponse = registrationResponseList.get(i);
             VoterResult voterResult =
@@ -295,7 +295,7 @@ public class PerfAnonymousVotingUtils {
             CoordinatorResult coordinatorResult =
                     CoordinatorClient.certifyUnboundedVoter(
                             coordinatorState,
-                            DemoMain.blank_ballot_weight[i],
+                            DemoMain.unbounded_blank_ballot_value[i],
                             registrationRequestList.get(i));
             registrationResponseList.add(coordinatorResult.registrationResponse);
         }
@@ -308,7 +308,7 @@ public class PerfAnonymousVotingUtils {
                 votingChoicesBuilder.addChoice(
                         StringToIntPair.newBuilder()
                                 .setKey(candidates.get(j))
-                                .setValue(DemoMain.voting_ballot_weight[i][j]));
+                                .setValue(DemoMain.unbounded_voting_ballot_value[i][j]));
             }
             VotingChoices votingChoices = votingChoicesBuilder.build();
             VoterState voterState = voterStateList.get(i);

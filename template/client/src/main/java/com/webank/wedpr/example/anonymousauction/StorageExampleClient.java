@@ -1,13 +1,16 @@
 package com.webank.wedpr.example.anonymousauction;
 
+import com.webank.wedpr.anonymousauction.AuctionUtils;
 import com.webank.wedpr.anonymousauction.BidType;
 import com.webank.wedpr.anonymousauction.proto.AllBidStorageRequest;
 import com.webank.wedpr.anonymousauction.proto.AuctionItem;
+import com.webank.wedpr.anonymousauction.proto.BidComparisonResponse;
 import com.webank.wedpr.anonymousauction.proto.BidStorage;
 import com.webank.wedpr.anonymousauction.proto.SystemParametersStorage;
 import com.webank.wedpr.common.Utils;
 import com.webank.wedpr.common.WedprException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 import org.fisco.bcos.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.fisco.bcos.web3j.tuples.generated.Tuple2;
@@ -196,6 +199,37 @@ public class StorageExampleClient {
     }
 
     /**
+     * @param storageClient
+     * @return
+     * @throws Exception
+     */
+    public AllBidStorageRequest queryAllBidStorage() throws Exception {
+        List<String> bidderIds = queryAllBidderId();
+        int size = bidderIds.size();
+        List<BidStorage> bidStorageList = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            BidStorage bidStorage = queryBidStorageByBidderId(bidderIds.get(i));
+            bidStorageList.add(bidStorage);
+        }
+        AllBidStorageRequest allBidStorageRequest =
+                AuctionUtils.makeAllBidStorageRequest(bidStorageList);
+        return allBidStorageRequest;
+    }
+
+    public BidComparisonResponse queryBidComparisonStorage() throws Exception {
+        List<String> bidderIds = queryAllBidderId();
+        int size = bidderIds.size();
+        List<String> bidComparisonStorageList = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            String bidComparisonStorage = queryBidComparisonStorageByBidderId(bidderIds.get(i));
+            bidComparisonStorageList.add(bidComparisonStorage);
+        }
+        BidComparisonResponse bidComparisonResponse =
+                AuctionUtils.makeBidComparisonResponse(bidComparisonStorageList);
+        return bidComparisonResponse;
+    }
+
+    /**
      * Queries all BidderId
      *
      * @return
@@ -217,7 +251,7 @@ public class StorageExampleClient {
      * @return
      * @throws Exception
      */
-    public void insertRegulationInfo(String publicKey, String regulationInfo) throws Exception {
+    public void uploadRegulationInfo(String publicKey, String regulationInfo) throws Exception {
         TransactionReceipt transactionReceipt =
                 anonymousAuction.insertRegulationInfo(publicKey, regulationInfo).send();
         Utils.checkTranactionReceipt(transactionReceipt);
